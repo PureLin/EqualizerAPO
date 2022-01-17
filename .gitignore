@@ -1,0 +1,10 @@
+*.obj
+*.exe
+*.log
+*.pdb
+*.lib
+*.sdf
+.idea
+x64
+ipch
+setup
