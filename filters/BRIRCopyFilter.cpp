@@ -62,7 +62,6 @@ BRIRCopyFilter::BRIRCopyFilter(int port, wstring path){
 			inbuffer = new float*[2];
 			outbuffer = new float*[2];
 			for (int i = 0; i != 2; ++i){
-				inbuffer[i] = new float[bufsize];
 				outbuffer[i] = new float[bufsize];
 			}
 			convChannel.push_back(L"ToL");
@@ -102,7 +101,6 @@ std::vector <std::wstring> BRIRCopyFilter::initialize(float sampleRate, unsigned
 		}
 		for (int i = 0; i != 2; ++i){
 			for (int j = 0; j != bufsize; ++j){
-				inbuffer[i][j] = 0;
 				outbuffer[i][j] = 0;
 			}
 		}
@@ -126,7 +124,7 @@ void BRIRCopyFilter::process(float **output, float **input, unsigned int frameCo
 		}
 		for (int i = 0; i != 2; ++i){
 			int sourceMappingDirection = overflow(direction + SourceToHeadDiff[i]);
-			//for each channel need 2 brir to sim the actual pos
+			//for each source channel need 2 brir to sim the actual pos
 			//the volume will depend on direction,colser bigger
 			int brir[2];
 			double volume[2];
@@ -134,21 +132,16 @@ void BRIRCopyFilter::process(float **output, float **input, unsigned int frameCo
 			brir[1] = (brir[0] + 1) % 12;
 			volume[1] = double(sourceMappingDirection % 30) / 30;
 			volume[0] = 1 - volume[1];
-			//result with sound to leftear and rightear
 			for (int s = 0; s != 2; ++s){
 				//copy the source channel data to one brir
-				for (int bj = 0; bj != 2; ++bj){
-					for (unsigned f = 0; f < frameCount; f++){
-						inbuffer[bj][f] = volume[s] * input[i][f];
-					}
-				}
+				inbuffer[0] = input[i];
+				inbuffer[1] = input[i];
 				// then conv with the brir
 				convFilters[brir[s]]->process(outbuffer, inbuffer, frameCount);
 				//copy result to the leftear and rightear channel
-				//*0.5 for not clipping
 				for (int bj = 0; bj != 2; ++bj){
 					for (unsigned f = 0; f < frameCount; f++){
-						output[bj][f] += outbuffer[bj][f];
+						output[bj][f] += outbuffer[bj][f] * volume[s];
 					}
 				}
 			}
