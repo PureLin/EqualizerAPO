@@ -22,12 +22,16 @@ public:
 	volatile boolean open = true;
 
 	void doReceive(){
+		LogFStatic(L"start to receive ");
 		while (open){
-			recvfrom(recvSocket,(char*)unionBuff.byte, bufLen, 0, (SOCKADDR*)&senderAddr, &senderAddrSize);
+			TraceF(L"receive a package");
+			int result = recvfrom(recvSocket, (char*)unionBuff.byte, bufLen, 0, (SOCKADDR*)&senderAddr, &senderAddrSize);
+			TraceF(L"receive a package with result %d", result);
 		}
 	}
 
 	void CloseUDP(){
+		LogF(L"Shutdown udp receiver !");
 		open = false;
 		closesocket(recvSocket);
 		WSACleanup();

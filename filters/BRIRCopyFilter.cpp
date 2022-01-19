@@ -14,9 +14,11 @@ static UDPReceiver* receiver;
 static bool init = false;
 static std::vector <std::wstring> convChannel;
 static int SourceToHeadDiff[8]{-30, 30, 0, 0, -135, 135 - 70, 70};
+static int lastLeftBrir[2];
 
 DWORD WINAPI ThreadFunc(LPVOID p)
 {
+	LogFStatic(L"ThreadFunc start !");
 	UDPReceiver* receiver = (UDPReceiver*)p;
 	receiver->doReceive();
 	return 0;
@@ -41,15 +43,17 @@ int overflow(int pos){
 	return pos;
 }
 
-BRIRCopyFilter::BRIRCopyFilter(int port, wstring path){
+BRIRCopyFilter::BRIRCopyFilter(int port, wstring path, bool useLinear){
 	if (!init){
 		try{
 			if (port != 0){
 				this->port = port;
 			}
+			this->useLinearPos = useLinear;
+			LogF(L"Use LinearPos %d", useLinear);
 			LogF(L"Create UDPReceiver");
 			void* mem = MemoryHelper::alloc(sizeof(UDPReceiver));
-			receiver = new(mem)UDPReceiver(2055);
+			receiver = new(mem)UDPReceiver(this->port);
 			hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadFunc, receiver, 0, &threadId);
 			LogF(L"Create UDPReceiver Finished");
 			for (int i = 0; i != 12; ++i){
@@ -66,6 +70,7 @@ BRIRCopyFilter::BRIRCopyFilter(int port, wstring path){
 			}
 			convChannel.push_back(L"ToL");
 			convChannel.push_back(L"ToR");
+			LogF(L"init finished");
 			init = true;
 		}
 		catch (exception e){
@@ -84,7 +89,7 @@ BRIRCopyFilter::~BRIRCopyFilter(){
 
 std::vector <std::wstring> BRIRCopyFilter::initialize(float sampleRate, unsigned int maxFrameCount, std::vector <std::wstring> channelNames) {
 
-	inputChannels = channelNames.size();
+	inputChannels = max(channelNames.size(), 8);
 	for (std::wstring s : channelNames){
 		TraceF(L"in channel: %s", s);
 	}
@@ -116,7 +121,6 @@ void BRIRCopyFilter::process(float **output, float **input, unsigned int frameCo
 	try{
 		double* data = (double *)receiver->unionBuff.data;
 		double yaw = data[3];
-		TraceF(L"Yaw %f", yaw);
 		int direction = 180 - yaw / 5;
 		//avoid error yaw input
 		if (direction < 0 || direction>360){
@@ -130,8 +134,18 @@ void BRIRCopyFilter::process(float **output, float **input, unsigned int frameCo
 			double volume[2];
 			brir[0] = sourceMappingDirection / 30;
 			brir[1] = (brir[0] + 1) % 12;
-			volume[1] = double(sourceMappingDirection % 30) / 30;
+			if (useLinearPos){
+				volume[1] = double(sourceMappingDirection % 30) / 30;
+			}
+			else{
+				volume[1] = pow((double(sourceMappingDirection % 30) - 15) / 15, 3) / 2 + 0.5;
+			}
 			volume[0] = 1 - volume[1];
+			if (lastLeftBrir[i] != brir[0]){
+				TraceF(L"Channel %d, Yaw %f, frameCount %d", i, yaw, frameCount);
+				TraceF(L"brir %d %d, volume %f %f", brir[0], brir[1], volume[0], volume[1]);
+				lastLeftBrir[i] = brir[0];
+			}
 			for (int s = 0; s != 2; ++s){
 				//copy the source channel data to one brir
 				inbuffer[0] = input[i];

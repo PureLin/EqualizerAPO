@@ -22,6 +22,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
+#include "helpers/LogHelper.h"
 #include "helpers/RegistryHelper.h"
 #include "VoicemeeterClient.h"
 #include "VoicemeeterAPOInfo.h"
@@ -39,6 +40,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_ LPTSTR lpCmdLine,
 	_In_ int nCmdShow)
 {
+	LogFStatic(L"Voicemeter start");
 	vector<wstring> outputs;
 	if (lpCmdLine[0] != 0)
 	{

@@ -30,7 +30,7 @@ vector<IFilter*> BRIRCopyFilterFactory::createFilter(const wstring& configPath, 
 		PathRemoveFileSpecW(filePath);
 		wstring absolutePath = filePath;
 		absolutePath.append(L"\\brir\\");
-		filter = new(mem)BRIRCopyFilter(0, absolutePath);
+		filter = new(mem)BRIRCopyFilter(0, absolutePath, parameters.find(L"linear") != parameters.npos);
 	}
 	if (filter == NULL)
 		return vector<IFilter*>(0);
