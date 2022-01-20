@@ -6,25 +6,62 @@
 
 using namespace std;
 
+struct BrirJobInfo{
+	int direction;
+	int channel;
+	bool useLinearPos;
+	float **input;
+	int frameCount;
+};
+
 static ConvolutionFilter* convFilters[12];
-static int bufsize = 65536;
-static float ** inbuffer;
-static float ** outbuffer;
+static int bufsize = 10240;
+static float ** inbuffer = 0;
+//8 input->2 simulate brir->2 ear for each brir
+static float * outbuffer[8][2][2];
 static UDPReceiver* receiver;
 static bool init = false;
 static std::vector <std::wstring> convChannel;
 static int SourceToHeadDiff[8]{-30, 30, 0, 0, -135, 135 - 70, 70};
-static int lastLeftBrir[2];
+static int lastLeftBrir[8];
+static BrirJobInfo brirJobs[8];
+static PTP_POOL pool = NULL;
+static PTP_WORK works[8];
+
+void initBuff(){
+	LogFStatic(L"Create buff !");
+	for (int ch = 0; ch != 8; ++ch){
+		for (int j = 0; j != 2; ++j){
+			for (int k = 0; k != 2; ++k){
+				if (outbuffer[ch][j][k] != 0){
+					delete[] outbuffer;
+				}
+				outbuffer[ch][j][k] = new float[bufsize];
+			}
+		}
+	}
+}
+
+
+void clearBuff(int frameCount){
+	TraceFStatic(L"Clear buff !");
+	for (int ch = 0; ch != 8; ++ch){
+		for (int j = 0; j != 2; ++j){
+			for (int k = 0; k != 2; ++k){
+				for (int f = 0; f != frameCount; ++f){
+					outbuffer[ch][j][k][f] = 0;
+				}
+			}
+		}
+	}
+}
+
 
 DWORD WINAPI ThreadFunc(LPVOID p)
 {
 	LogFStatic(L"ThreadFunc start !");
 	UDPReceiver* receiver = (UDPReceiver*)p;
 	receiver->doReceive();
-	return 0;
-}
-
-DWORD WINAPI CopyAndConvFunc(LPVOID p){
 	return 0;
 }
 
@@ -56,21 +93,20 @@ BRIRCopyFilter::BRIRCopyFilter(int port, wstring path, bool useLinear){
 			receiver = new(mem)UDPReceiver(this->port);
 			hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadFunc, receiver, 0, &threadId);
 			LogF(L"Create UDPReceiver Finished");
-			for (int i = 0; i != 12; ++i){
+			for (int ch = 0; ch != 12; ++ch){
 				wstring configPath(path);
-				configPath.append(to_wstring(i)).append(L".wav");
-				LogF(L"Create ConvFilter %d %ls", i, configPath.c_str());
-				convFilters[i] = createConvFilter(configPath);
+				configPath.append(to_wstring(ch)).append(L".wav");
+				LogF(L"Create ConvFilter %d %ls", ch, configPath.c_str());
+				convFilters[ch] = createConvFilter(configPath);
 			}
 			LogF(L"create buffsize %d", bufsize);
-			inbuffer = new float*[2];
-			outbuffer = new float*[2];
-			for (int i = 0; i != 2; ++i){
-				outbuffer[i] = new float[bufsize];
-			}
+			initBuff();
 			convChannel.push_back(L"ToL");
 			convChannel.push_back(L"ToR");
-			LogF(L"init finished");
+			LogF(L"create threadpool");
+			pool = CreateThreadpool(NULL);
+			SetThreadpoolThreadMaximum(pool, 16);
+			SetThreadpoolThreadMinimum(pool, 8);
 			init = true;
 		}
 		catch (exception e){
@@ -89,9 +125,9 @@ BRIRCopyFilter::~BRIRCopyFilter(){
 
 std::vector <std::wstring> BRIRCopyFilter::initialize(float sampleRate, unsigned int maxFrameCount, std::vector <std::wstring> channelNames) {
 
-	inputChannels = max(channelNames.size(), 8);
-	for (std::wstring s : channelNames){
-		TraceF(L"in channel: %s", s);
+	inputChannels = min(channelNames.size(), 8);
+	for (std::wstring br : channelNames){
+		TraceF(L"in channel: %br", br);
 	}
 	std::vector <std::wstring> outputchannel;
 	outputchannel.push_back(L"HRIRL");
@@ -100,17 +136,67 @@ std::vector <std::wstring> BRIRCopyFilter::initialize(float sampleRate, unsigned
 		LogF(L"not init !");
 	}
 	else{
-		for (int i = 0; i != 12; ++i){
-			TraceF(L"init convFilter %d", i);
-			convFilters[i]->initialize(sampleRate, maxFrameCount, convChannel);
+		if (maxFrameCount > bufsize){
+			LogF(L"bufsize not enough, reacreate buff %d", maxFrameCount);
+			bufsize = maxFrameCount;
+			initBuff();
 		}
-		for (int i = 0; i != 2; ++i){
-			for (int j = 0; j != bufsize; ++j){
-				outbuffer[i][j] = 0;
-			}
+		clearBuff(maxFrameCount);
+		for (int ch = 0; ch != 12; ++ch){
+			TraceF(L"init convFilter %d", ch);
+			convFilters[ch]->initialize(sampleRate, maxFrameCount, convChannel);
 		}
 	}
 	return outputchannel;
+}
+
+
+void processOneChannelBrir(BrirJobInfo* job){
+	int sourceMappingDirection = overflow(job->direction + SourceToHeadDiff[job->channel]);
+	//for each source channel need 2 brir to sim the actual pos
+	//the volume will depend on direction,colser bigger
+	int brir[2];
+	double volume[2];
+	brir[0] = sourceMappingDirection / 30;
+	brir[1] = (brir[0] + 1) % 12;
+	if (job->useLinearPos){
+		volume[1] = double(sourceMappingDirection % 30) / 30;
+	}
+	else{
+		volume[1] = pow((double(sourceMappingDirection % 30) - 15) / 15, 3) / 2 + 0.5;
+	}
+	volume[0] = 1 - volume[1];
+	if (lastLeftBrir[job->channel] != brir[0]){
+		TraceFStatic(L"Channel %d, direction %f, frameCount %d", job->channel, job->direction, job->frameCount);
+		TraceFStatic(L"brir %d %d, volume %f %f", brir[0], brir[1], volume[0], volume[1]);
+		lastLeftBrir[job->channel] = brir[0];
+	}
+	float** inputBuffer = new float*[2];
+	for (int br = 0; br != 2; ++br){
+		//copy the source channel data to one brir
+		inputBuffer[1] = inputBuffer[0] = job->input[job->channel];
+		// then conv with the brir
+		convFilters[brir[br]]->process(outbuffer[job->channel][br], inputBuffer, job->frameCount);
+		//copy result to the leftear and rightear channel
+		for (int ear = 0; ear != 2; ++ear){
+			for (unsigned f = 0; f < job->frameCount; f++){
+				outbuffer[job->channel][br][ear][f] *= volume[br];
+			}
+		}
+	}
+	delete[] inputBuffer;
+}
+
+VOID
+CALLBACK
+BRIRWorkCallBack(
+PTP_CALLBACK_INSTANCE Instance,
+PVOID                 Parameter,
+PTP_WORK              Work
+)
+{
+	processOneChannelBrir((BrirJobInfo *)Parameter);
+	return;
 }
 
 void BRIRCopyFilter::process(float **output, float **input, unsigned int frameCount) {
@@ -126,36 +212,29 @@ void BRIRCopyFilter::process(float **output, float **input, unsigned int frameCo
 		if (direction < 0 || direction>360){
 			direction = 180;
 		}
-		for (int i = 0; i != 2; ++i){
-			int sourceMappingDirection = overflow(direction + SourceToHeadDiff[i]);
-			//for each source channel need 2 brir to sim the actual pos
-			//the volume will depend on direction,colser bigger
-			int brir[2];
-			double volume[2];
-			brir[0] = sourceMappingDirection / 30;
-			brir[1] = (brir[0] + 1) % 12;
-			if (useLinearPos){
-				volume[1] = double(sourceMappingDirection % 30) / 30;
+		for (int ch = 0; ch != inputChannels; ++ch){
+			TraceFStatic(L"create Channel %d work", ch);
+			brirJobs[ch].direction = direction;
+			brirJobs[ch].channel = ch;
+			brirJobs[ch].useLinearPos = useLinearPos;
+			brirJobs[ch].input = input;
+			brirJobs[ch].frameCount = frameCount;
+			works[ch] = CreateThreadpoolWork(BRIRWorkCallBack, &brirJobs[ch], NULL);
+			SubmitThreadpoolWork(works[ch]);
+			//processOneChannelBrir(&brirJobs[ch]);
+		}
+		for (int ear = 0; ear != 2; ++ear){
+			for (unsigned f = 0; f < frameCount; f++){
+				output[ear][f] = 0;
 			}
-			else{
-				volume[1] = pow((double(sourceMappingDirection % 30) - 15) / 15, 3) / 2 + 0.5;
-			}
-			volume[0] = 1 - volume[1];
-			if (lastLeftBrir[i] != brir[0]){
-				TraceF(L"Channel %d, Yaw %f, frameCount %d", i, yaw, frameCount);
-				TraceF(L"brir %d %d, volume %f %f", brir[0], brir[1], volume[0], volume[1]);
-				lastLeftBrir[i] = brir[0];
-			}
-			for (int s = 0; s != 2; ++s){
-				//copy the source channel data to one brir
-				inbuffer[0] = input[i];
-				inbuffer[1] = input[i];
-				// then conv with the brir
-				convFilters[brir[s]]->process(outbuffer, inbuffer, frameCount);
-				//copy result to the leftear and rightear channel
-				for (int bj = 0; bj != 2; ++bj){
+		}
+		for (int ch = 0; ch != inputChannels; ++ch){
+			TraceFStatic(L"wait for Channel %d work finish", ch);
+			WaitForThreadpoolWorkCallbacks(works[ch], false);
+			for (int br = 0; br != 2; ++br){
+				for (int ear = 0; ear != 2; ++ear){
 					for (unsigned f = 0; f < frameCount; f++){
-						output[bj][f] += outbuffer[bj][f] * volume[s];
+						output[ear][f] += outbuffer[ch][br][ear][f];
 					}
 				}
 			}
@@ -163,7 +242,7 @@ void BRIRCopyFilter::process(float **output, float **input, unsigned int frameCo
 	}
 	catch (exception e){
 		LogF(L"Exception Occurs");
-		LogF(L"%s", e.what());
+		LogF(L"%br", e.what());
 	}
 	catch (...){
 		LogF(L"Exception Occurs");

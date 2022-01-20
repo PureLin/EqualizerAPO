@@ -22,7 +22,7 @@ public:
 	volatile boolean open = true;
 
 	void doReceive(){
-		LogFStatic(L"start to receive ");
+		TraceF(L"start to receive ");
 		while (open){
 			TraceF(L"receive a package");
 			int result = recvfrom(recvSocket, (char*)unionBuff.byte, bufLen, 0, (SOCKADDR*)&senderAddr, &senderAddrSize);

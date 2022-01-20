@@ -38,7 +38,7 @@
 
 using namespace std;
 
-double mainTest(int argc, char** argv)
+double mainTest(int argc, char** argv, int testChannel)
 {
 	try
 	{
@@ -126,7 +126,7 @@ double mainTest(int argc, char** argv)
 		{
 			sampleRate = rateArg.getValue();
 			channelMask = 0;
-			channelCount = channelArg.getValue();
+			channelCount = testChannel;
 			float sweepFrom = fromArg.getValue();
 			float sweepTo = toArg.getValue();
 			float sweepDiff = sweepTo - sweepFrom;
@@ -244,11 +244,18 @@ double mainTest(int argc, char** argv)
 
 
 int main(int argc, char** argv){
-	double maxTime = 0;
-	for (int i = 0; i != 5; ++i){
-		maxTime = max(mainTest(argc, argv), maxTime);
+	double channel2MaxTime = 0;
+	for (int i = 0; i != 4; ++i){
+		channel2MaxTime = max(mainTest(argc, argv, 2), channel2MaxTime);
 	}
-	printf("10ms could hanlde %f sample \n", 8820000 /100 / maxTime);
+	double channel8MaxTime = 0;
+	for (int i = 0; i != 4; ++i){
+		channel8MaxTime = max(mainTest(argc, argv, 8), channel8MaxTime);
+	}
+	printf("1ms could hanlde %f sample of 2 channel\n", 8820000 / 1000 / channel2MaxTime);
+	printf("1ms could hanlde %f sample of 8 channel\n", 8820000 / 1000 / channel8MaxTime);
+	printf("8channel use %f time of 2channel \n\n\n", channel8MaxTime / channel2MaxTime);
+
 	system("pause");
 	return 0;
 }
