@@ -126,6 +126,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -144,6 +145,8 @@
     <ClInclude Include="filters\BiQuadFilterFactory.h" />
     <ClInclude Include="filters\BRIRCopyFilter.h" />
     <ClInclude Include="filters\BRIRCopyFilterFactory.h" />
+    <ClInclude Include="filters\ChannelCopyTestFilter.h" />
+    <ClInclude Include="filters\ChannelCopyTestFilterFactory.h" />
     <ClInclude Include="filters\ChannelFilter.h" />
     <ClInclude Include="filters\ChannelFilterFactory.h" />
     <ClInclude Include="filters\ConvolutionFilter.h" />
@@ -202,6 +205,8 @@
     <ClCompile Include="filters\BiQuadFilterFactory.cpp" />
     <ClCompile Include="filters\BRIRCopyFilter.cpp" />
     <ClCompile Include="filters\BRIRCopyFilterFactory.cpp" />
+    <ClCompile Include="filters\ChannelCopyTestFilter.cpp" />
+    <ClCompile Include="filters\ChannelCopyTestFilterFactory.cpp" />
     <ClCompile Include="filters\ChannelFilter.cpp" />
     <ClCompile Include="filters\ChannelFilterFactory.cpp" />
     <ClCompile Include="filters\ConvolutionFilter.cpp" />
@@ -224,6 +229,7 @@
     <ClCompile Include="filters\PreampFilter.cpp" />
     <ClCompile Include="filters\PreampFilterFactory.cpp" />
     <ClCompile Include="filters\StageFilterFactory.cpp" />
+    <ClCompile Include="filters\UDPReceiver.cpp" />
     <ClCompile Include="filters\VSTPluginFilter.cpp" />
     <ClCompile Include="filters\VSTPluginFilterFactory.cpp" />
     <ClCompile Include="helpers\AbstractLibrary.cpp" />

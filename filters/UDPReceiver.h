@@ -5,7 +5,6 @@
 #include "helpers/LogHelper.h"
 #pragma comment(lib,"WS2_32.lib")
 
-
 class UDPReceiver{
 public:
 	WSADATA wsData;
@@ -52,3 +51,5 @@ public:
 		CloseUDP();
 	}
 };
+
+extern UDPReceiver* receiver;

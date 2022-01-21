@@ -145,13 +145,19 @@
       <Filter>parser</Filter>
     </ClInclude>
     <ClInclude Include="filters\BRIRCopyFilter.h">
-      <Filter>filters</Filter>
+      <Filter>brir</Filter>
     </ClInclude>
     <ClInclude Include="filters\BRIRCopyFilterFactory.h">
-      <Filter>filters</Filter>
+      <Filter>brir</Filter>
     </ClInclude>
     <ClInclude Include="filters\UDPReceiver.h">
-      <Filter>filters</Filter>
+      <Filter>brir</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\ChannelCopyTestFilter.h">
+      <Filter>brir</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\ChannelCopyTestFilterFactory.h">
+      <Filter>brir</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -283,10 +289,19 @@
       <Filter>parser</Filter>
     </ClCompile>
     <ClCompile Include="filters\BRIRCopyFilter.cpp">
-      <Filter>filters</Filter>
+      <Filter>brir</Filter>
     </ClCompile>
     <ClCompile Include="filters\BRIRCopyFilterFactory.cpp">
-      <Filter>filters</Filter>
+      <Filter>brir</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\ChannelCopyTestFilter.cpp">
+      <Filter>brir</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\ChannelCopyTestFilterFactory.cpp">
+      <Filter>brir</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\UDPReceiver.cpp">
+      <Filter>brir</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -304,6 +319,9 @@
     </Filter>
     <Filter Include="filters\loudnessCorrection">
       <UniqueIdentifier>{c473f978-6002-42aa-adf5-3b5f10868d2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="brir">
+      <UniqueIdentifier>{c6bd8d8a-90c4-4b48-99aa-7d296953eb95}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

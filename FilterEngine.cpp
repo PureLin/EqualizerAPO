@@ -57,6 +57,7 @@
 #include "filters/VSTPluginFilterFactory.h"
 #include "filters/loudnessCorrection/LoudnessCorrectionFilterFactory.h"
 #include "filters/BRIRCopyFilterFactory.h"
+#include "filters/ChannelCopyTestFilterFactory.h"
 
 using namespace std;
 using namespace mup;
@@ -95,6 +96,7 @@ FilterEngine::FilterEngine()
 	factories.push_back(new VSTPluginFilterFactory());
 	factories.push_back(new LoudnessCorrectionFilterFactory());
 	factories.push_back(new BRIRCopyFilterFactory());
+	factories.push_back(new ChannelCopyTestFilterFactory());
 }
 
 FilterEngine::~FilterEngine()

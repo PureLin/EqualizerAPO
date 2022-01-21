@@ -12,13 +12,11 @@ static unsigned int bufsize = 10240;
 static unsigned int brFrameCount = 0;
 //12 brir->2 ear for each brir
 static float * inbuffer[12][2];
-static float * outbuffer[12][2];
 //indicate this brir need conv
 static boolean brirNeedConv[12];
 static int jobIndex[12]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 static float volumePrecent;
 
-static UDPReceiver* receiver;
 static bool init = false;
 static std::vector <std::wstring> convChannel;
 static int SourceToHeadDiff[8]{-30, 30, 0, 0, -135, 135, -70, 70};
@@ -44,25 +42,11 @@ int getPortOffset()
 void initBuff(){
 	for (int br = 0; br != 12; ++br){
 		for (int er = 0; er != 2; ++er){
-			if (outbuffer[br][er] != 0){
-				delete[] outbuffer[br][er];
-			}
-			outbuffer[br][er] = new float[bufsize];
-		}
-	}
-	for (int br = 0; br != 12; ++br){
-		for (int er = 0; er != 2; ++er){
 			if (inbuffer[br][er] != 0){
 				delete[] inbuffer[br][er];
 			}
 			inbuffer[br][er] = new float[bufsize];
 		}
-	}
-}
-
-void clearBuff(int frameCount, int br){
-	for (int er = 0; er != 2; ++er){
-		std::fill(outbuffer[br][er], outbuffer[br][er] + frameCount, 0.0f);
 	}
 }
 
@@ -82,7 +66,6 @@ void inline copyInputData(int* brir, float* volume, unsigned int frameCount, flo
 				}
 			}
 		}
-		clearBuff(frameCount, brir[sch]);
 		brirNeedConv[brir[sch]] = true;
 	}
 }
@@ -138,7 +121,7 @@ BRIRCopyFilter::BRIRCopyFilter(int port, wstring path, bool useLinear){
 			LogF(L"Create UDPReceiver");
 			void* mem = MemoryHelper::alloc(sizeof(UDPReceiver));
 			receiver = new(mem)UDPReceiver(this->port);
-			hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadFunc, receiver, 0, &threadId);
+			hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadFunc, (void*)receiver, 0, &threadId);
 			LogF(L"Create UDPReceiver Finished");
 			for (int ch = 0; ch != 12; ++ch){
 				wstring configPath(path);
@@ -199,7 +182,7 @@ std::vector <std::wstring> BRIRCopyFilter::initialize(float sampleRate, unsigned
 
 
 void processOneChannelBrir(int br){
-	convFilters[br]->process(outbuffer[br], inbuffer[br], brFrameCount);
+	convFilters[br]->process(inbuffer[br], inbuffer[br], brFrameCount);
 }
 
 VOID
@@ -260,7 +243,7 @@ void BRIRCopyFilter::process(float **output, float **input, unsigned int frameCo
 				WaitForThreadpoolWorkCallbacks(works[br], false);
 				for (int ear = 0; ear != 2; ++ear){
 					for (unsigned f = 0; f < frameCount; f++){
-						output[ear][f] += outbuffer[br][ear][f];
+						output[ear][f] += inbuffer[br][ear][f];
 					}
 				}
 				CloseThreadpoolWork(works[br]);
