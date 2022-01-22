@@ -73,9 +73,9 @@
     <LibraryPath>C:\Program Files (x86)\libsndfile\lib;C:\Program Files\muparserx_v3_0_1\lib;C:\Program Files (x86)\fftw3;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir);C:\Program Files\tclap-1.2.1\include;C:\Program Files\libsndfile\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\libsndfile\lib;C:\Program Files\muparserx_v3_0_1\lib64;C:\Program Files\fftw3;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)tclap-1.2.1\include;$(SolutionDir)libsndfile\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)libsndfile\lib;$(SolutionDir)fftw3;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -106,11 +106,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(OutDir)Common.lib;muparserxd.lib;version.lib;Shlwapi.lib;authz.lib;crypt32.lib;dbghelp.lib;libsndfile-1.lib;libfftw3f-3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)Common.lib;version.lib;Shlwapi.lib;authz.lib;crypt32.lib;dbghelp.lib;libsndfile-1.lib;libfftw3f-3.lib;$(OutDir)muparserx.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -147,7 +148,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>$(OutDir)Common.lib;version.lib;Shlwapi.lib;authz.lib;crypt32.lib;dbghelp.lib;libsndfile-1.lib;libfftw3f-3.lib;muparserx.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)Common.lib;version.lib;Shlwapi.lib;authz.lib;crypt32.lib;dbghelp.lib;libsndfile-1.lib;libfftw3f-3.lib;$(OutDir)muparserx.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -77,7 +77,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\libsndfile\lib;C:\Program Files\muparserx_v3_0_1\lib64;C:\Program Files\fftw3;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)libsndfile\lib;$(SolutionDir)fftw3;$(SolutionDir)muparserx\x64\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -116,7 +116,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(OutDir)Common.lib;muparserxd.lib;audioeng.lib;version.lib;wmcodecdspuuid.lib;AudioBaseProcessingObject.lib;audiomediatypecrt.lib;Shlwapi.lib;authz.lib;crypt32.lib;dbghelp.lib;libsndfile-1.lib;libfftw3f-3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)Common.lib;$(OutDir)muparserx.lib;audioeng.lib;version.lib;wmcodecdspuuid.lib;AudioBaseProcessingObject.lib;audiomediatypecrt.lib;Shlwapi.lib;authz.lib;crypt32.lib;dbghelp.lib;libsndfile-1.lib;libfftw3f-3.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>EqualizerAPO.def</ModuleDefinitionFile>
     </Link>
     <Midl>
@@ -151,13 +151,14 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;USE_WINDDK;NDEBUG;_WINDOWS;_USRDLL;EQUALIZERAPO_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <AdditionalOptions>/arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>$(OutDir)Common.lib;muparserx.lib;audioeng.lib;version.lib;wmcodecdspuuid.lib;AudioBaseProcessingObject.lib;audiomediatypecrt.lib;Shlwapi.lib;authz.lib;crypt32.lib;dbghelp.lib;libsndfile-1.lib;libfftw3f-3.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(OutDir)Common.lib;$(OutDir)muparserx.lib;audioeng.lib;version.lib;wmcodecdspuuid.lib;AudioBaseProcessingObject.lib;audiomediatypecrt.lib;Shlwapi.lib;authz.lib;crypt32.lib;dbghelp.lib;libsndfile-1.lib;libfftw3f-3.lib;legacy_stdio_definitions.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>EqualizerAPO.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
