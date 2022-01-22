@@ -1,0 +1,288 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="mpCompat.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpDefines.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpError.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpFuncCmplx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpFuncCommon.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpFuncMatrix.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpFuncNonCmplx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpFuncStr.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpFwdDecl.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpICallback.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpIfThenElse.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpIOprt.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpIOprtBinShortcut.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpIPackage.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpIPrecedence.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpIToken.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpIValReader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpIValue.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpMatrix.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpMatrixError.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpOprtBinAssign.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpOprtBinCommon.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpOprtBinShortcut.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpOprtCmplx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpOprtIndex.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpOprtMatrix.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpOprtNonCmplx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpOprtPostfixCommon.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpPackageCmplx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpPackageCommon.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpPackageMatrix.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpPackageNonCmplx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpPackageStr.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpPackageUnit.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpParser.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpParserBase.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpParserMessageProvider.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpRPN.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpScriptTokens.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpStack.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpTest.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpTokenReader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpTypes.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpValReader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpValue.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpValueCache.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mpVariable.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="suSortPred.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="suStringTokens.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="utGeneric.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="mpError.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpFuncCmplx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpFuncCommon.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpFuncMatrix.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpFuncNonCmplx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpFuncStr.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpICallback.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpIfThenElse.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpIOprt.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpIOprtBinShortcut.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpIPackage.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpIToken.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpIValReader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpIValue.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpOprtBinAssign.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpOprtBinCommon.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpOprtBinShortcut.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpOprtCmplx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpOprtIndex.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpOprtMatrix.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpOprtNonCmplx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpOprtPostfixCommon.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpPackageCmplx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpPackageCommon.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpPackageMatrix.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpPackageNonCmplx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpPackageStr.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpPackageUnit.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpParser.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpParserBase.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpParserMessageProvider.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpRPN.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpScriptTokens.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpTest.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpTokenReader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpValReader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpValue.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpValueCache.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mpVariable.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -41,12 +41,12 @@ template<> struct to_WString_type_traits<double>
 
 template<> struct to_WString_type_traits<int>
 {
-	static inline std::wstring cast_ToWString(const int& input) {return std::to_wstring((_Longlong)input);}
+	static inline std::wstring cast_ToWString(const int& input) {return std::to_wstring((__int64)input);}
 };
 
 template<> struct to_WString_type_traits<bool>
 {
-	static inline std::wstring cast_ToWString(const bool& input) {return std::to_wstring((_Longlong)input);}
+	static inline std::wstring cast_ToWString(const bool& input) {return std::to_wstring((__int64)input);}
 };
 
 template<> struct to_WString_type_traits<std::string>
@@ -131,7 +131,7 @@ public:
 
 	template<typename T, typename U> void add(const T& parameter, const U& name)
 	{
-		std::wstring nameStr = to_WString_type_traits<U>::cast_ToWString(name);
+		std::wstring nameStr = to_WString_type_traits<U>::cast_ToWString((U&)name);
 		if (!nameStr.empty())
 		{
 			_serializedParamters += nameStr;

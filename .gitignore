@@ -5,6 +5,7 @@
 *.lib
 *.sdf
 .idea
+.vs
 x64
 ipch
 setup

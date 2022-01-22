@@ -20,7 +20,7 @@
 #pragma once
 
 #include <string>
-#include <hash_map>
+#include <unordered_map>
 
 #include "IFilterFactory.h"
 #include "IFilter.h"
