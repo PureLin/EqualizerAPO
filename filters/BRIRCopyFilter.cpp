@@ -73,13 +73,17 @@ void inline copyInputData(int* brir, float* volume, unsigned int frameCount, flo
 void inline calculatePosAndVolume(int* brir, float* volume, int sourceMappingDirection, bool useLinearPos){
 	brir[0] = sourceMappingDirection / 30;
 	brir[1] = (brir[0] + 1) % 12;
-	if (useLinearPos){
-		volume[1] = float(sourceMappingDirection % 30) / 30;
-	}
-	else{
-		volume[1] = pow((double(sourceMappingDirection % 30) - 15) / 15, 3) / 2 + 0.5;
-	}
+	volume[1] = float(sourceMappingDirection % 30) / 30;
+	//volume[1] = pow((double(sourceMappingDirection % 30) - 15) / 15, 3) / 2 + 0.5;
 	volume[0] = 1 - volume[1];
+	if (!useLinearPos) {
+		if (volume[0] > 0.5) {
+			volume[0] -= pow(volume[0] - 0.5, 2);
+		}
+		else {
+			volume[1] -= pow(volume[1] - 0.5, 2);
+		}
+	}
 	volume[0] *= volumePrecent;
 	volume[1] *= volumePrecent;
 }

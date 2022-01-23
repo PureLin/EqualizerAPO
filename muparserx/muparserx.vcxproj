@@ -194,7 +194,6 @@
     <ClInclude Include="mpValue.h" />
     <ClInclude Include="mpValueCache.h" />
     <ClInclude Include="mpVariable.h" />
-    <ClInclude Include="stdafx.h" />
     <ClInclude Include="suSortPred.h" />
     <ClInclude Include="suStringTokens.h" />
     <ClInclude Include="utGeneric.h" />
@@ -239,10 +238,6 @@
     <ClCompile Include="mpValue.cpp" />
     <ClCompile Include="mpValueCache.cpp" />
     <ClCompile Include="mpVariable.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
