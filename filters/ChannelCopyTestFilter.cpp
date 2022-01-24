@@ -25,7 +25,7 @@ void ChannelCopyTestFilter::process(float** output, float** input, unsigned fram
 	double vol[2];
 	vol[0] = data[0];
 	vol[1] = data[1];
-	if (vol[0] + vol[1] <= 0 || vol[0] + vol[1] > 1) {
+	if (vol[0] + vol[1] <= 0 || vol[0] + vol[1] > 2) {
 		vol[0] = 1, vol[1] = 0;
 	}
 	for (int ch = 0; ch != 2; ++ch) {

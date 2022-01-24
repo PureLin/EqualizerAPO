@@ -9,7 +9,7 @@
 class BRIRCopyFilter : public IFilter
 {
 public:
-	BRIRCopyFilter(int port,std::wstring path,bool useLinear);
+	BRIRCopyFilter(int port, std::wstring path);
 	virtual ~BRIRCopyFilter();
 
 	bool getAllChannels() override { return true; }
@@ -21,6 +21,5 @@ private:
 	HANDLE hThread;
 	int inputChannels;
 	int port = 2055;
-	bool useLinearPos;
 };
 #pragma AVRT_VTABLES_END
