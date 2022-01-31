@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <crtdbg.h>
 #endif
+#include <io.h>
 #include <cstdio>
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -38,7 +39,7 @@
 
 using namespace std;
 
-double mainTest(int argc, char** argv, int testChannel)
+double mainTest(int argc, char** argv)
 {
 	try
 	{
@@ -112,10 +113,19 @@ double mainTest(int argc, char** argv, int testChannel)
 
 			buf = new float[frameCount * channelCount];
 
+			printf("file frame count %d\n", frameCount);
 			sf_count_t numRead = 0;
+			sf_count_t numReadLast = 0;
 			while (numRead < frameCount)
+			{
 				numRead += sf_readf_float(inFile, buf + numRead * channelCount, frameCount - numRead);
-
+				printf("read %lld frame\n", numRead);
+				if (numRead == numReadLast) {
+					printf("warning : file could read more ,remain %lld not read", frameCount - numRead);
+					break;
+				}
+				numReadLast = numRead;
+			}
 			sf_close(inFile);
 			inFile = NULL;
 
@@ -126,7 +136,7 @@ double mainTest(int argc, char** argv, int testChannel)
 		{
 			sampleRate = rateArg.getValue();
 			channelMask = 0;
-			channelCount = testChannel;
+			channelCount = channelArg.getValue();
 			float sweepFrom = fromArg.getValue();
 			float sweepTo = toArg.getValue();
 			float sweepDiff = sweepTo - sweepFrom;
@@ -213,8 +223,14 @@ double mainTest(int argc, char** argv, int testChannel)
 			}
 
 			printf("\nWriting output to %s\n", output.c_str());
+			SF_INFO info;
+			if (output.find(".flac") != string::npos) {
+				info = { frameCount, (int)sampleRate, (int)channelCount, SF_FORMAT_FLAC | SF_FORMAT_PCM_16, 0 };
+			}
+			else {
+				info = { frameCount, (int)sampleRate, (int)channelCount, SF_FORMAT_WAV | SF_FORMAT_PCM_16, 0 };
+			}
 
-			SF_INFO info = { frameCount, (int)sampleRate, (int)channelCount, SF_FORMAT_WAV | SF_FORMAT_PCM_16, 0 };
 			SNDFILE* outFile = sf_open(output.c_str(), SFM_WRITE, &info);
 			if (outFile == NULL)
 			{
@@ -242,20 +258,117 @@ double mainTest(int argc, char** argv, int testChannel)
 	}
 }
 
-
-int main(int argc, char** argv){
+void runBatchTest() {
+	int c = 3;
+	char** v = new char* [3];
+	v[0] = "BatchTest.exe";
+	v[1] = "-c";
+	v[2] = "2";
 	double channel2MaxTime = 0;
-	for (int i = 0; i != 4; ++i){
-		channel2MaxTime = max(mainTest(argc, argv, 2), channel2MaxTime);
+	for (int i = 0; i != 4; ++i) {
+		channel2MaxTime = max(mainTest(c, v), channel2MaxTime);
 	}
+	v[1] = "-c";
+	v[2] = "8";
 	double channel8MaxTime = 0;
-	for (int i = 0; i != 4; ++i){
-		channel8MaxTime = max(mainTest(argc, argv, 8), channel8MaxTime);
+	for (int i = 0; i != 4; ++i) {
+		channel8MaxTime = max(mainTest(c, v), channel8MaxTime);
 	}
 	printf("1ms could hanlde %f sample of 2 channel\n", 8820000 / 1000 / channel2MaxTime);
 	printf("1ms could hanlde %f sample of 8 channel\n", 8820000 / 1000 / channel8MaxTime);
 	printf("8channel use %f time of 2channel \n\n\n", channel8MaxTime / channel2MaxTime);
 
+}
+
+struct files {
+	string input;
+	string output;
+	files(string a, string b) {
+		input = a;
+		output = b;
+	}
+};
+
+void findfile(string path, string mode, vector<string>& fileNames)
+{
+	_finddata_t file;
+	intptr_t HANDLE;
+	string Onepath = path + mode;
+	HANDLE = _findfirst(Onepath.c_str(), &file);
+	if (HANDLE == -1L) {
+		cout << "can not match the folder path" << endl;
+		return;
+	}
+	do {
+		//判断是否有子目录  
+		if (file.attrib & _A_SUBDIR) {
+			//判断是否为"."当前目录，".."上一层目录
+			if ((strcmp(file.name, ".") != 0) && (strcmp(file.name, "..") != 0)) {
+				string newPath = path + "\\" + file.name;
+				findfile(newPath, mode, fileNames);
+			}
+		}
+		else {
+			cout << file.name << " " << endl;
+			string fname(file.name);
+			if (fname.find(".flac") != string::npos) {
+				fileNames.push_back(path + "\\" + fname);
+			}
+		}
+	} while (_findnext(HANDLE, &file) == 0);
+	_findclose(HANDLE);
+}
+
+void processMusicAudioFiles(string directory) {
+	vector<string> fileNames;
+	findfile(directory, "\\*.*", fileNames);
+	int argc = 5;
+	char** argv = new char* [5];
+	argv[0] = "123.exe";
+	argv[1] = "--input";
+	argv[3] = "--output";
+	for (string name : fileNames) {
+		argv[2] = (char*)name.c_str();
+		argv[4] = (char*)name.c_str();
+		mainTest(argc, argv);
+	}
+}
+
+int main(int argc, char** argv) {
+	stringstream versionStream;
+	versionStream << MAJOR << "." << MINOR;
+	if (REVISION != 0)
+		versionStream << "." << REVISION;
+	TCLAP::CmdLine cmd("Benchmark generates a linear sine sweep or reads from the given input file. "
+		"It then filters the waveform using the Equalizer APO filter configuration "
+		"and finally writes to the given file or into the user's temp directory.", ' ', versionStream.str());
+	TCLAP::SwitchArg batchArg("b", "batchTest", "Will run the batch process and not accept any input", cmd);
+	TCLAP::ValueArg<string> processArg("", "ProcessAudio", "Will run the batch process for audio in this directory", false, "", "string", cmd);
+	TCLAP::SwitchArg noPauseArg("", "nopause", "Do not wait for key press at the end", cmd);
+	TCLAP::SwitchArg verboseArg("v", "verbose", "Print trace and error messages to console instead of logfile", cmd);
+	TCLAP::ValueArg<string> guidArg("", "guid", "Endpoint GUID to use when parsing configuration (Default: <empty>)", false, "", "string", cmd);
+	TCLAP::ValueArg<string> connectionnameArg("", "connectionname", "Connection name to use when parsing configuration (Default: File output)", false, "File output", "string", cmd);
+	TCLAP::ValueArg<string> devicenameArg("", "devicename", "Device name to use when parsing configuration (Default: Benchmark)", false, "Benchmark", "string", cmd);
+	TCLAP::ValueArg<unsigned> batchsizeArg("", "batchsize", "Number of frames processed in one batch (Default: 4410)", false, 4410, "integer", cmd);
+	TCLAP::ValueArg<string> outputArg("o", "output", "File to write sound data to", false, "", "string", cmd);
+	TCLAP::ValueArg<string> inputArg("i", "input", "File to load sound data from instead of generating sweep", false, "", "string", cmd);
+	TCLAP::ValueArg<unsigned> rateArg("r", "rate", "Sample rate of generated sweep (Default: 44100)", false, 44100, "integer", cmd);
+	TCLAP::ValueArg<float> toArg("t", "to", "End frequency of generated sweep in Hz (Default: 20000.0)", false, 20000.0f, "float", cmd);
+	TCLAP::ValueArg<float> fromArg("f", "from", "Start frequency of generated sweep in Hz (Default: 0.1)", false, 1.0f, "float", cmd);
+	TCLAP::ValueArg<float> lengthArg("l", "length", "Length of generated sweep in seconds (Default: 200.0)", false, 200.0f, "float", cmd);
+	TCLAP::ValueArg<unsigned> channelArg("c", "channels", "Number of channels of generated sweep (Default: 2)", false, 2, "integer", cmd);
+
+	cmd.parse(argc, argv);
+
+	if (batchArg.getValue()) {
+		runBatchTest();
+		return 0;
+	}
+	if (processArg.getValue().length() != 0) {
+		processMusicAudioFiles(processArg.getValue());
+		return 0;
+	}
+	mainTest(argc, argv);
 	system("pause");
 	return 0;
 }

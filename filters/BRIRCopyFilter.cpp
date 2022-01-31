@@ -26,20 +26,6 @@ static PTP_POOL pool = NULL;
 static PTP_WORK works[12];
 #pragma AVRT_VTABLES_END
 
-int getPortOffset()
-{
-	wchar_t szFileFullPath[MAX_PATH];
-	::GetModuleFileNameW(NULL, szFileFullPath, MAX_PATH);
-	int length = ::lstrlen(szFileFullPath);
-	wstring fullpath(szFileFullPath);
-	if (fullpath.find(L"Benchmark") != wstring::npos) {
-		return 1;
-	}
-	if (fullpath.find(L"Voicemeeter") != wstring::npos) {
-		return 2;
-	}
-	return 0;
-}
 void initBuff() {
 	for (int br = 0; br != 12; ++br) {
 		for (int er = 0; er != 2; ++er) {
@@ -82,15 +68,6 @@ void inline calculatePosAndVolume(int* brir, float* volume, int sourceMappingDir
 	volume[1] *= volumePrecent;
 }
 
-
-DWORD WINAPI ThreadFunc(LPVOID p)
-{
-	LogFStatic(L"ThreadFunc start !");
-	UDPReceiver* receiver = (UDPReceiver*)p;
-	receiver->doReceive();
-	return 0;
-}
-
 ConvolutionFilter* createConvFilter(wstring& filePath) {
 	void* mem = MemoryHelper::alloc(sizeof(ConvolutionFilter));
 	return new(mem)ConvolutionFilter(filePath);
@@ -108,40 +85,27 @@ int overflow(int pos) {
 
 BRIRCopyFilter::BRIRCopyFilter(int port, wstring path) {
 	if (!init) {
-		try {
-			if (port != 0) {
-				this->port = port;
-			}
-			this->port += getPortOffset();
-			LogF(L"Use UDP port %d", this->port);
-			LogF(L"Create UDPReceiver");
-			void* mem = MemoryHelper::alloc(sizeof(UDPReceiver));
-			receiver = new(mem)UDPReceiver(this->port);
-			hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadFunc, (void*)receiver, 0, &threadId);
-			LogF(L"Create UDPReceiver Finished");
-			for (int ch = 0; ch != 12; ++ch) {
-				wstring configPath(path);
-				configPath.append(to_wstring(ch)).append(L".wav");
-				LogF(L"Create ConvFilter %d %ls", ch, configPath.c_str());
-				convFilters[ch] = createConvFilter(configPath);
-			}
-			LogF(L"create buffsize %d", bufsize);
-			initBuff();
-			convChannel.push_back(L"ToL");
-			convChannel.push_back(L"ToR");
-			LogF(L"create threadpool");
-			pool = CreateThreadpool(NULL);
-			SetThreadpoolThreadMaximum(pool, 12);
-			SetThreadpoolThreadMinimum(pool, 12);
-			init = true;
+		LogF(L"Use UDP port %d", port);
+		if (!UDPReceiver::initUdpReceiver(port)) {
+			LogF(L"UDP receiver init fialed");
+			return;
 		}
-		catch (exception e) {
-			LogF(L"Create UDPReceiver Failed");
-			if (receiver != 0) {
-				receiver->open = false;
-				CloseHandle(hThread);
-			}
+		LogF(L"Create UDPReceiver Finished");
+		for (int ch = 0; ch != 12; ++ch) {
+			wstring configPath(path);
+			configPath.append(to_wstring(ch)).append(L".wav");
+			LogF(L"Create ConvFilter %d %ls", ch, configPath.c_str());
+			convFilters[ch] = createConvFilter(configPath);
 		}
+		LogF(L"create buffsize %d", bufsize);
+		initBuff();
+		convChannel.push_back(L"ToL");
+		convChannel.push_back(L"ToR");
+		LogF(L"create threadpool");
+		pool = CreateThreadpool(NULL);
+		SetThreadpoolThreadMaximum(pool, 12);
+		SetThreadpoolThreadMinimum(pool, 12);
+		init = true;
 	}
 }
 
@@ -201,9 +165,9 @@ void BRIRCopyFilter::process(float** output, float** input, unsigned int frameCo
 	}
 	try {
 		brFrameCount = frameCount;
-		double* data = (double*)receiver->unionBuff.data;
+		double* data = (double*)UDPReceiver::globalReceiver->unionBuff.data;
 		double yaw = data[3];
-		int direction = 180 - int(yaw / 5);
+		int direction = 180 - int(yaw);
 		//avoid error yaw input
 		if (direction < 0 || direction>360) {
 			direction = 180;

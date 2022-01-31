@@ -159,6 +159,18 @@
     <ClInclude Include="filters\ChannelCopyTestFilterFactory.h">
       <Filter>brir</Filter>
     </ClInclude>
+    <ClInclude Include="direction\Quaternion.h">
+      <Filter>direction</Filter>
+    </ClInclude>
+    <ClInclude Include="direction\Vector3.h">
+      <Filter>direction</Filter>
+    </ClInclude>
+    <ClInclude Include="direction\DriectionCal.h">
+      <Filter>direction</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIRMultiLayerCopyFilter.h">
+      <Filter>brir</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -303,6 +315,15 @@
     <ClCompile Include="filters\UDPReceiver.cpp">
       <Filter>brir</Filter>
     </ClCompile>
+    <ClCompile Include="direction\Quaternion.cpp">
+      <Filter>direction</Filter>
+    </ClCompile>
+    <ClCompile Include="direction\DriectionCal.cpp">
+      <Filter>direction</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\BRIRMultiLayerCopyFilter.cpp">
+      <Filter>brir</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="filters">
@@ -322,6 +343,9 @@
     </Filter>
     <Filter Include="brir">
       <UniqueIdentifier>{c6bd8d8a-90c4-4b48-99aa-7d296953eb95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="direction">
+      <UniqueIdentifier>{63d7623a-2b85-4231-8710-09d8375cc11c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

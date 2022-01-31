@@ -1,0 +1,46 @@
+#include"stdafx.h"
+#include"DriectionCal.h"
+#include"Quaternion.h"
+
+float sin30 = sin(M_PI / 6);
+float cos30 = cos(M_PI / 6);
+float sin45 = sin(M_PI / 4);
+float cos45 = cos(M_PI / 4);
+float sin70 = sin(M_PI / 18 * 7);
+float cos70 = cos(M_PI / 18 * 7);
+
+Vector3 sourceDirection[8]{
+	{cos30,sin30,0},//L
+	{cos30,-sin30,0},//R
+	{1.0,0.0,0.0},//C
+	{1.0,0.0,0.0},//LFE
+	{-sin45,cos45,0.0},//RL
+	{-sin45,-cos45,0.0},//RR
+	{cos70,sin70,0},//SL
+	{cos70,-sin70,0}//SR
+};
+SoundDirection actualDirection[8];
+
+void transferDirection(Vector3& v, Vector3& p, SoundDirection& direction) {
+	Vector3 actualDirection = v - p;
+	float length = v.Length();
+	float length2 = sqrt(v.x * v.x + v.y * v.y);
+	direction.horizon = int(acos(v.x / length2) * 180 / M_PI);
+	if (actualDirection.y > 0) {
+		direction.horizon *= -1;
+	}
+	direction.vertical = int(acos(length2 / length) * 180 / M_PI);
+	if (actualDirection.z < 0) {
+		direction.vertical *= -1;
+	}
+	direction.amp = 1 / length;
+}
+
+void calculateDirection(Position& position,int inputChannel)
+{
+	Quaternion q(position.yaw, position.pitch, position.roll);
+	Vector3 xyz(position.x, position.y, position.z);
+	for (int ch = 0; ch != inputChannel; ++ch) {
+		transferDirection(q.Rotate(sourceDirection[ch]), xyz, actualDirection[ch]);
+	}
+}

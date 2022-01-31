@@ -18,10 +18,10 @@ std::vector<std::wstring> ChannelCopyTestFilter::initialize(float sampleRate, un
 }
 
 void ChannelCopyTestFilter::process(float** output, float** input, unsigned frameCount) {
-	if (receiver == NULL) {
+	if (UDPReceiver::globalReceiver == NULL) {
 		return;
 	}
-	double* data = (double*)receiver->unionBuff.data;
+	double* data = (double*)UDPReceiver::globalReceiver->unionBuff.data;
 	double vol[2];
 	vol[0] = data[0];
 	vol[1] = data[1];

@@ -6,11 +6,12 @@
 #include "ConvolutionFilter.h"
 
 #pragma AVRT_VTABLES_BEGIN
-class BRIRCopyFilter : public IFilter
+class BRIRMultiLayerCopyFilter : public IFilter
 {
 public:
-	BRIRCopyFilter(int port, std::wstring path);
-	virtual ~BRIRCopyFilter();
+	BRIRMultiLayerCopyFilter(int port, std::wstring path);
+	virtual ~BRIRMultiLayerCopyFilter();
+
 
 	bool getAllChannels() override { return true; }
 	bool getInPlace() override { return false; }

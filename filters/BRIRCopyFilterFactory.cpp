@@ -10,12 +10,13 @@
 #include "FilterEngine.h"
 #include "BRIRCopyFilterFactory.h"
 #include "BRIRCopyFilter.h"
+#include "BRIRMultiLayerCopyFilter.h"
 using namespace std;
 using namespace mup;
 
 vector<IFilter*> BRIRCopyFilterFactory::createFilter(const wstring& configPath, wstring& command, wstring& parameters)
 {
-	BRIRCopyFilter * filter = NULL;
+	IFilter* filter = NULL;
 	if (command == L"BRIRCopy")
 	{
 		LogF(L"create BRIR copy filter");
@@ -30,8 +31,23 @@ vector<IFilter*> BRIRCopyFilterFactory::createFilter(const wstring& configPath, 
 		PathRemoveFileSpecW(filePath);
 		wstring absolutePath = filePath;
 		absolutePath.append(L"\\brir\\");
-		// parameters.find(L"linear") != parameters.npos
-		filter = new(mem)BRIRCopyFilter(0, absolutePath);
+		filter = new(mem)BRIRCopyFilter(2055, absolutePath);
+	}
+	if (command == L"BRIRMulti")
+	{
+		LogF(L"create BRIRMulti filter");
+		void* mem = MemoryHelper::alloc(sizeof(BRIRMultiLayerCopyFilter));
+
+		wchar_t filePath[MAX_PATH];
+		configPath._Copy_s(filePath, sizeof(filePath) / sizeof(wchar_t), MAX_PATH);
+		if (configPath.size() < MAX_PATH)
+			filePath[configPath.size()] = L'\0';
+		else
+			filePath[MAX_PATH - 1] = L'\0';
+		PathRemoveFileSpecW(filePath);
+		wstring absolutePath = filePath;
+		absolutePath.append(L"\\brir\\");
+		filter = new(mem)BRIRMultiLayerCopyFilter(2055, absolutePath);
 	}
 	if (filter == NULL)
 		return vector<IFilter*>(0);
