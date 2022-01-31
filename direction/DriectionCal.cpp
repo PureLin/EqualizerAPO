@@ -25,18 +25,20 @@ void transferDirection(Vector3& v, Vector3& p, SoundDirection& direction) {
 	Vector3 actualDirection = v - p;
 	float length = v.Length();
 	float length2 = sqrt(v.x * v.x + v.y * v.y);
-	direction.horizon = int(acos(v.x / length2) * 180 / M_PI);
+	float hf = acos(v.x / length2) * 180 / M_PI;
+	direction.horizon = int(round(hf));
 	if (actualDirection.y > 0) {
 		direction.horizon *= -1;
 	}
-	direction.vertical = int(acos(length2 / length) * 180 / M_PI);
+	float vf = acos(length2 / length) * 180 / M_PI;
+	direction.vertical = int(round(vf));
 	if (actualDirection.z < 0) {
 		direction.vertical *= -1;
 	}
 	direction.amp = 1 / length;
 }
 
-void calculateDirection(Position& position,int inputChannel)
+void calculateDirection(Position& position, int inputChannel)
 {
 	Quaternion q(position.yaw, position.pitch, position.roll);
 	Vector3 xyz(position.x, position.y, position.z);

@@ -10,8 +10,6 @@
 using namespace std;
 
 #pragma AVRT_VTABLES_BEGIN
-
-
 static int layDegree[5]{ -60,-30,0,30,60 };
 static int layPosCount[5]{ 8,12,12,12,8 };
 static int layHorzionDegree[5]{ 45,30,30,30,45 };
@@ -43,8 +41,6 @@ static PTP_WORK works[32];
 static float volumePrecent;
 static bool init = false;
 static std::vector <std::wstring> convChannel;
-static int SourceToHeadDiff[8]{ -30, 30, 0, 0, -135, 135, -70, 70 };
-static int lastLeftBrir[8];
 static PTP_POOL pool = NULL;
 #pragma AVRT_VTABLES_END
 
@@ -144,7 +140,7 @@ ConvWorkCallBack(
 	return;
 }
 
-void createLayerJob(vector<CopyJobInfo>& job, int lay, int horizon, float volume, int ch) {
+void inline createLayerJob(vector<CopyJobInfo>& job, int lay, int horizon, float volume, int ch) {
 	horizon += 180;
 	int degree = layHorzionDegree[lay];
 	if (horizon % degree == 0) {
@@ -158,37 +154,46 @@ void createLayerJob(vector<CopyJobInfo>& job, int lay, int horizon, float volume
 	}
 }
 
+vector<CopyJobInfo> createOnechannelJob(int ch) {
+	vector<CopyJobInfo> job;
+	int downDegree = -1000;
+	SoundDirection d = actualDirection[ch];
+	int lay = 0;
+	for (; lay != 5; ++lay) {
+		if (layDegree[lay] < d.vertical) {
+			downDegree = layDegree[lay];
+			continue;
+		}
+		if (layDegree[lay] == d.vertical || downDegree == -1000) {
+			createLayerJob(job, lay, d.horizon, 1.0, ch);
+			break;
+		}
+		else {
+			float volume[2];
+			calculateVolume(float(d.vertical - downDegree) / 30.0, volume);
+			createLayerJob(job, lay - 1, d.horizon, volume[0], ch);
+			createLayerJob(job, lay, d.horizon, volume[1], ch);
+		}
+		break;
+	}
+	if (lay == 5) {
+		createLayerJob(job, 4, d.horizon, 1.0, ch);
+	}
+	float totalVolume = 0;
+	for (CopyJobInfo j : job) {
+		totalVolume += j.volume * j.volume;
+	}
+	for (CopyJobInfo j : job) {
+		j.volume /= totalVolume;
+	}
+	return job;
+}
+
 vector<CopyJobInfo> createJob(int inputChannels) {
 	vector<CopyJobInfo> job;
 	for (int ch = 0; ch != inputChannels; ++ch) {
-		int downDegree = -1000;
-		SoundDirection d = actualDirection[ch];
-		int lay = 0;
-		for (; lay != 5; ++lay) {
-			if (layDegree[lay] < d.vertical) {
-				downDegree = layDegree[lay];
-				continue;
-			}
-			if (layDegree[lay] == d.vertical) {
-				createLayerJob(job, lay, d.horizon, 1.0, ch);
-				break;
-			}
-			if (layDegree[lay] > d.vertical) {
-				if (downDegree == -1000) {
-					createLayerJob(job, lay, d.horizon, 1.0, ch);
-				}
-				else {
-					float volume[2];
-					calculateVolume(float(d.vertical - downDegree) / 30.0, volume);
-					createLayerJob(job, lay - 1, d.horizon, volume[0], ch);
-					createLayerJob(job, lay, d.horizon, volume[1], ch);
-				}
-				break;
-			}
-		}
-		if (lay == 5) {
-			createLayerJob(job, 4, d.horizon, 1.0, ch);
-		}
+		vector<CopyJobInfo> oneChanneljob = createOnechannelJob(ch);
+		job.insert(job.end(), oneChanneljob.begin(), oneChanneljob.end());
 	}
 	return job;
 }
@@ -223,6 +228,7 @@ std::vector <std::wstring> BRIRMultiLayerCopyFilter::initialize(float sampleRate
 	return outputchannel;
 }
 
+
 void BRIRMultiLayerCopyFilter::process(float** output, float** input, unsigned int frameCount) {
 	if (!init) {
 		LogF(L"BRIR not init !");
@@ -231,7 +237,7 @@ void BRIRMultiLayerCopyFilter::process(float** output, float** input, unsigned i
 	try {
 		brFrameCount = frameCount;
 		double* data = (double*)UDPReceiver::globalReceiver->unionBuff.data;
-		data[0] = data[1] = data[2] = 0;
+		data[5] = data[0] = data[1] = data[2] = 0;
 		Position postion(data);
 		calculateDirection(postion, inputChannels);
 		vector<CopyJobInfo> jobs = createJob(inputChannels);
@@ -252,7 +258,7 @@ void BRIRMultiLayerCopyFilter::process(float** output, float** input, unsigned i
 			}
 		}
 		for (int jc = 0; jc != convJobCount; ++jc) {
-			works[jc] = CreateThreadpoolWork(ConvWorkCallBack, convJobs+jc, NULL);
+			works[jc] = CreateThreadpoolWork(ConvWorkCallBack, convJobs + jc, NULL);
 			SubmitThreadpoolWork(works[jc]);
 		}
 		for (int ear = 0; ear != 2; ++ear) {

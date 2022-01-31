@@ -34,7 +34,11 @@ void Quaternion::SetEulerAngle(float yaw, float pitch, float roll)
 	x = sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw;
 	y = cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw;
 	z = cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw;
-
+	float mag = x * x + y * y + z * z + w * w;
+	x /= mag;
+	y /= mag;
+	z /= mag;
+	w /= mag;
 }
 
 Vector3 Quaternion::Rotate(const Vector3& v)

@@ -21,7 +21,6 @@ static float volumePrecent;
 static bool init = false;
 static std::vector <std::wstring> convChannel;
 static int SourceToHeadDiff[8]{ -30, 30, 0, 0, -135, 135, -70, 70 };
-static int lastLeftBrir[8];
 static PTP_POOL pool = NULL;
 static PTP_WORK works[12];
 #pragma AVRT_VTABLES_END
@@ -39,6 +38,9 @@ void initBuff() {
 
 void inline copyInputData(int* brir, float* volume, unsigned int frameCount, float* oneChannelInput) {
 	for (int sch = 0; sch != 2; ++sch) {
+		if (volume[sch] == 0) {
+			continue;
+		}
 		if (!brirNeedConv[brir[sch]]) {
 			for (int er = 0; er != 2; ++er) {
 				for (unsigned f = 0; f < frameCount; f++) {
@@ -61,7 +63,6 @@ void inline calculatePosAndVolume(int* brir, float* volume, int sourceMappingDir
 	brir[0] = sourceMappingDirection / 30;
 	brir[1] = (brir[0] + 1) % 12;
 	double degree = float(sourceMappingDirection % 30) * M_PI_2 / 30;
-	//volume[1] = pow((double(sourceMappingDirection % 30) - 15) / 15, 3) / 2 + 0.5;
 	volume[0] = cos(degree);
 	volume[1] = sin(degree);
 	volume[0] *= volumePrecent;
