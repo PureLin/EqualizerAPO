@@ -21,18 +21,17 @@ Vector3 sourceDirection[8]{
 };
 SoundDirection actualDirection[8];
 
-void transferDirection(Vector3& v, Vector3& p, SoundDirection& direction) {
-	Vector3 actualDirection = v - p;
+void transferDirection(Vector3& v, SoundDirection& direction) {
 	float length = v.Length();
 	float length2 = sqrt(v.x * v.x + v.y * v.y);
 	float hf = acos(v.x / length2) * 180 / M_PI;
 	direction.horizon = int(round(hf));
-	if (actualDirection.y > 0) {
+	if (v.y > 0) {
 		direction.horizon *= -1;
 	}
 	float vf = acos(length2 / length) * 180 / M_PI;
 	direction.vertical = int(round(vf));
-	if (actualDirection.z < 0) {
+	if (v.z < 0) {
 		direction.vertical *= -1;
 	}
 	direction.amp = 1 / length;
@@ -41,8 +40,7 @@ void transferDirection(Vector3& v, Vector3& p, SoundDirection& direction) {
 void calculateDirection(Position& position, int inputChannel)
 {
 	Quaternion q(position.yaw, position.pitch, position.roll);
-	Vector3 xyz(position.x, position.y, position.z);
 	for (int ch = 0; ch != inputChannel; ++ch) {
-		transferDirection(q.Rotate(sourceDirection[ch]), xyz, actualDirection[ch]);
+		transferDirection(q.Rotate(sourceDirection[ch]), actualDirection[ch]);
 	}
 }

@@ -168,7 +168,7 @@ void BRIRCopyFilter::process(float** output, float** input, unsigned int frameCo
 		brFrameCount = frameCount;
 		double* data = (double*)UDPReceiver::globalReceiver->unionBuff.data;
 		double yaw = data[3];
-		int direction = 180 - int(yaw);
+		int direction = 180 - int(yaw / 4);
 		//avoid error yaw input
 		if (direction < 0 || direction>360) {
 			direction = 180;

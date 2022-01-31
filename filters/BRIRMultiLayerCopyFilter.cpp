@@ -10,41 +10,28 @@
 using namespace std;
 
 #pragma AVRT_VTABLES_BEGIN
-static int layDegree[5]{ -60,-30,0,30,60 };
-static int layPosCount[5]{ 8,12,12,12,8 };
-static int layHorzionDegree[5]{ 45,30,30,30,45 };
+static const int layDegree[5]{ -60,-30,0,30,60 };
+static const int layPosCount[5]{ 8,12,12,12,8 };
+static const int layHorzionDegree[5]{ 45,30,30,30,45 };
 
-static ConvolutionFilter* convFilters[5][12];
+ConvolutionFilter* BRIRMultiLayerCopyFilter::convFilters[5][12];
+unsigned int BRIRMultiLayerCopyFilter::bufsize = 10240;
+unsigned int BRIRMultiLayerCopyFilter::brFrameCount = 0;
 
-static unsigned int bufsize = 10240;
-static unsigned int brFrameCount = 0;
 //5 layer->max 12 brir->2 ear for each brir
-static float* mlInBuffer[5][12][2];
+float* BRIRMultiLayerCopyFilter::mlInBuffer[5][12][2];
 //indicate this brir need conv
-static boolean brirNeedConv[5][12];
-static struct CopyJobInfo {
-	int layer;
-	int brirPos;
-	int sourceChannel;
-	float volume;
-	CopyJobInfo(int l, int b, int s, float v) {
-		layer = l; brirPos = b; sourceChannel = s; volume = v;
-	}
-};
-static struct ConvJobInfo {
-	int layer;
-	int pos;
-};
-static ConvJobInfo convJobs[32];
-static PTP_WORK works[32];
+boolean BRIRMultiLayerCopyFilter::brirNeedConv[5][12];
 
-static float volumePrecent;
-static bool init = false;
-static std::vector <std::wstring> convChannel;
-static PTP_POOL pool = NULL;
+ConvJobInfo BRIRMultiLayerCopyFilter::convJobs[32];
+PTP_WORK BRIRMultiLayerCopyFilter::works[32];
+
+bool BRIRMultiLayerCopyFilter::init = false;
+std::vector <std::wstring> BRIRMultiLayerCopyFilter::convChannel;
+PTP_POOL BRIRMultiLayerCopyFilter::pool = NULL;
 #pragma AVRT_VTABLES_END
 
-void initMlBuff() {
+void BRIRMultiLayerCopyFilter::initMlBuff() {
 	for (int lay = 0; lay != 5; ++lay) {
 		for (int br = 0; br != 12; ++br) {
 			for (int er = 0; er != 2; ++er) {
@@ -57,7 +44,7 @@ void initMlBuff() {
 	}
 }
 
-void inline copyInputData(vector<CopyJobInfo>& jobs, float** input, unsigned int frameCount) {
+void inline BRIRMultiLayerCopyFilter::copyInputData(vector<CopyJobInfo>& jobs, float** input, unsigned int frameCount) {
 	for (CopyJobInfo job : jobs) {
 		if (!brirNeedConv[job.layer][job.brirPos]) {
 			for (int er = 0; er != 2; ++er) {
@@ -78,7 +65,7 @@ void inline copyInputData(vector<CopyJobInfo>& jobs, float** input, unsigned int
 	}
 }
 
-void inline calculateVolume(float toLeftLowPercent, float* volume) {
+void inline calculateVolume(double toLeftLowPercent, double* volume) {
 	double degree = toLeftLowPercent * M_PI_2;
 	volume[0] = cos(degree);
 	volume[1] = sin(degree);
@@ -125,7 +112,7 @@ BRIRMultiLayerCopyFilter::~BRIRMultiLayerCopyFilter() {
 }
 
 void processOneChannelBrir(ConvJobInfo* job) {
-	convFilters[job->layer][job->pos]->process(mlInBuffer[job->layer][job->pos], mlInBuffer[job->layer][job->pos], brFrameCount);
+	BRIRMultiLayerCopyFilter::convFilters[job->layer][job->pos]->process(BRIRMultiLayerCopyFilter::mlInBuffer[job->layer][job->pos], BRIRMultiLayerCopyFilter::mlInBuffer[job->layer][job->pos], BRIRMultiLayerCopyFilter::brFrameCount);
 }
 
 VOID
@@ -140,14 +127,14 @@ ConvWorkCallBack(
 	return;
 }
 
-void inline createLayerJob(vector<CopyJobInfo>& job, int lay, int horizon, float volume, int ch) {
+void inline createLayerJob(vector<CopyJobInfo>& job, int lay, int horizon, double volume, int ch) {
 	horizon += 180;
 	int degree = layHorzionDegree[lay];
 	if (horizon % degree == 0) {
 		job.push_back(CopyJobInfo(lay, horizon / degree, ch, volume));
 	}
 	else {
-		float horizonVolume[2];
+		double horizonVolume[2];
 		calculateVolume(float(horizon % degree) / degree, horizonVolume);
 		job.push_back(CopyJobInfo(lay, horizon / degree, ch, volume * horizonVolume[0]));
 		job.push_back(CopyJobInfo(lay, horizon / degree + 1, ch, volume * horizonVolume[1]));
@@ -169,7 +156,7 @@ vector<CopyJobInfo> createOnechannelJob(int ch) {
 			break;
 		}
 		else {
-			float volume[2];
+			double volume[2];
 			calculateVolume(float(d.vertical - downDegree) / 30.0, volume);
 			createLayerJob(job, lay - 1, d.horizon, volume[0], ch);
 			createLayerJob(job, lay, d.horizon, volume[1], ch);
@@ -179,11 +166,12 @@ vector<CopyJobInfo> createOnechannelJob(int ch) {
 	if (lay == 5) {
 		createLayerJob(job, 4, d.horizon, 1.0, ch);
 	}
-	float totalVolume = 0;
-	for (CopyJobInfo j : job) {
+	
+	double totalVolume = 0;
+	for (CopyJobInfo& j : job) {
 		totalVolume += j.volume * j.volume;
 	}
-	for (CopyJobInfo j : job) {
+	for (CopyJobInfo& j : job) {
 		j.volume /= totalVolume;
 	}
 	return job;
@@ -202,7 +190,6 @@ vector<CopyJobInfo> createJob(int inputChannels) {
 std::vector <std::wstring> BRIRMultiLayerCopyFilter::initialize(float sampleRate, unsigned int maxFrameCount, std::vector <std::wstring> channelNames) {
 
 	inputChannels = min((int)channelNames.size(), 8);
-	volumePrecent = 4 / double(inputChannels + 4);
 	for (std::wstring br : channelNames) {
 		TraceF(L"in channel: %br", br);
 	}
@@ -237,7 +224,6 @@ void BRIRMultiLayerCopyFilter::process(float** output, float** input, unsigned i
 	try {
 		brFrameCount = frameCount;
 		double* data = (double*)UDPReceiver::globalReceiver->unionBuff.data;
-		data[5] = data[0] = data[1] = data[2] = 0;
 		Position postion(data);
 		calculateDirection(postion, inputChannels);
 		vector<CopyJobInfo> jobs = createJob(inputChannels);
