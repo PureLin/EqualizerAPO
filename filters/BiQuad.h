@@ -23,6 +23,7 @@
 #include <cmath>
 #include <climits>
 #include <string>
+#include <float.h>
 
 #define IS_DENORMAL(d) (abs(d) < DBL_MIN)
 

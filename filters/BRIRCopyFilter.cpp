@@ -20,7 +20,7 @@ static float volumePrecent;
 
 static bool init = false;
 static std::vector <std::wstring> convChannel;
-static int SourceToHeadDiff[8]{ -30, 30, 0, 0, -135, 135, -70, 70 };
+static int SourceToHeadDiff[8]{ -30, 30, 0, 0, -135, 135, -90, 90 };
 static PTP_POOL pool = NULL;
 static PTP_WORK works[12];
 #pragma AVRT_VTABLES_END
@@ -143,7 +143,10 @@ std::vector <std::wstring> BRIRCopyFilter::initialize(float sampleRate, unsigned
 
 
 void processOneChannelBrir(int br) {
-	convFilters[br]->process(inbuffer[br], inbuffer[br], brFrameCount);
+	__try {
+		convFilters[br]->process(inbuffer[br], inbuffer[br], brFrameCount);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {}
 }
 
 VOID

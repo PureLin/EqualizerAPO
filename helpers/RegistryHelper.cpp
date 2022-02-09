@@ -230,7 +230,7 @@ void RegistryHelper::writeMultiValue(wstring key, wstring valuename, wstring val
 	HKEY keyHandle = openKey(key, KEY_SET_VALUE | KEY_WOW64_64KEY);
 
 	wchar_t* data = new wchar_t[value.size() + 2];
-	value._Copy_s(data, (value.size() + 2) * sizeof(wchar_t), value.size());
+    value.copy(data, (value.size() + 2) * sizeof(wchar_t), value.size());
 	data[value.size()] = L'\0';
 	data[value.size() + 1] = L'\0';
 
@@ -256,7 +256,7 @@ void RegistryHelper::writeMultiValue(wstring key, wstring valuename, vector<wstr
 	size_t offset = 0;
 	for (wstring value : values)
 	{
-		value._Copy_s(data + offset, size * sizeof(wchar_t), value.size());
+        value.copy(data + offset, size * sizeof(wchar_t), value.size());
 		offset += value.size();
 		data[offset++] = L'\0';
 	}

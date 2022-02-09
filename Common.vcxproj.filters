@@ -171,6 +171,12 @@
     <ClInclude Include="filters\BRIRMultiLayerCopyFilter.h">
       <Filter>brir</Filter>
     </ClInclude>
+    <ClInclude Include="filters\BRIR\BRIRFilter.h">
+      <Filter>brir</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\BRIRConvolutionFilter.h">
+      <Filter>brir</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -322,6 +328,12 @@
       <Filter>direction</Filter>
     </ClCompile>
     <ClCompile Include="filters\BRIRMultiLayerCopyFilter.cpp">
+      <Filter>brir</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\BRIR\BRIRFilter.cpp">
+      <Filter>brir</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\BRIR\BRIRConvolutionFilter.cpp">
       <Filter>brir</Filter>
     </ClCompile>
   </ItemGroup>

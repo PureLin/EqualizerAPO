@@ -34,7 +34,6 @@ void transferDirection(Vector3& v, SoundDirection& direction) {
 	if (v.z < 0) {
 		direction.vertical *= -1;
 	}
-	direction.amp = 1 / length;
 }
 
 void calculateDirection(Position& position, int inputChannel)

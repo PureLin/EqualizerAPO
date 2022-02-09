@@ -13,6 +13,7 @@ using namespace std;
 static const int layDegree[5]{ -60,-30,0,30,60 };
 static const int layPosCount[5]{ 8,12,12,12,8 };
 static const int layHorzionDegree[5]{ 45,30,30,30,45 };
+static float volumePrecent;
 
 ConvolutionFilter* BRIRMultiLayerCopyFilter::convFilters[5][12];
 unsigned int BRIRMultiLayerCopyFilter::bufsize = 10240;
@@ -111,8 +112,11 @@ BRIRMultiLayerCopyFilter::BRIRMultiLayerCopyFilter(int port, wstring path) {
 BRIRMultiLayerCopyFilter::~BRIRMultiLayerCopyFilter() {
 }
 
-void processOneChannelBrir(ConvJobInfo* job) {
-	BRIRMultiLayerCopyFilter::convFilters[job->layer][job->pos]->process(BRIRMultiLayerCopyFilter::mlInBuffer[job->layer][job->pos], BRIRMultiLayerCopyFilter::mlInBuffer[job->layer][job->pos], BRIRMultiLayerCopyFilter::brFrameCount);
+void BRIRMultiLayerCopyFilter::processOneChannelBrir(ConvJobInfo* job) {
+	__try {
+		convFilters[job->layer][job->pos]->process(mlInBuffer[job->layer][job->pos], mlInBuffer[job->layer][job->pos], brFrameCount);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {}
 }
 
 VOID
@@ -123,7 +127,7 @@ ConvWorkCallBack(
 	PTP_WORK              Work
 )
 {
-	processOneChannelBrir((ConvJobInfo*)Parameter);
+	BRIRMultiLayerCopyFilter::processOneChannelBrir((ConvJobInfo*)Parameter);
 	return;
 }
 
@@ -172,7 +176,7 @@ vector<CopyJobInfo> createOnechannelJob(int ch) {
 		totalVolume += j.volume * j.volume;
 	}
 	for (CopyJobInfo& j : job) {
-		j.volume /= totalVolume;
+		j.volume = j.volume * volumePrecent / totalVolume;
 	}
 	return job;
 }
@@ -190,6 +194,7 @@ vector<CopyJobInfo> createJob(int inputChannels) {
 std::vector <std::wstring> BRIRMultiLayerCopyFilter::initialize(float sampleRate, unsigned int maxFrameCount, std::vector <std::wstring> channelNames) {
 
 	inputChannels = min((int)channelNames.size(), 8);
+	volumePrecent = 4 / double(inputChannels + 4);
 	for (std::wstring br : channelNames) {
 		TraceF(L"in channel: %br", br);
 	}

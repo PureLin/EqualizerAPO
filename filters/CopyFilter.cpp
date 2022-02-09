@@ -123,7 +123,7 @@ void CopyFilter::process(float** output, float** input, unsigned frameCount)
 
 			if (is.channel == -1)
 				for (unsigned f = 0; f < frameCount; f++)
-					output[ia.targetChannel][f] = is.factor;
+					output[ia.targetChannel][f] = 0;
 			else if (is.factor == 1.0)
 				memcpy(output[ia.targetChannel], input[is.channel], frameCount * sizeof(float));
 			else
@@ -137,7 +137,7 @@ void CopyFilter::process(float** output, float** input, unsigned frameCount)
 
 			if (is.channel == -1)
 				for (unsigned f = 0; f < frameCount; f++)
-					output[ia.targetChannel][f] += is.factor;
+					output[ia.targetChannel][f] += 0;
 			else if (is.factor == 1.0)
 				for (unsigned f = 0; f < frameCount; f++)
 					output[ia.targetChannel][f] += input[is.channel][f];

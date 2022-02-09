@@ -31,6 +31,9 @@ public:
 	std::vector<std::wstring> initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames) override;
 	void process(float** output, float** input, unsigned frameCount) override;
 	
+
+	static void processOneChannelBrir(ConvJobInfo* job);
+
 	void initMlBuff();
 	void copyInputData(std::vector<CopyJobInfo>& jobs, float** input, unsigned int frameCount);
 	static ConvolutionFilter* convFilters[5][12];
