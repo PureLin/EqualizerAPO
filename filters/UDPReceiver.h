@@ -6,18 +6,31 @@
 
 #pragma comment(lib,"WS2_32.lib")
 
+enum UDPDataType {
+	number,
+	character
+};
+
 class UDPReceiver{
 public:
-	volatile union{
+	volatile union {
 		double data[32];
 		char byte[256];
-	}unionBuff;
-	volatile boolean open = true;
-	int port = 2055;
+	}unionBuff; 
+	
+	int getDirection(UDPDataType dataType);
+	void doGetHotKey();
+
 	static bool initUdpReceiver(int port);
 	static UDPReceiver* globalReceiver;
 
 private:
+	volatile boolean open = true;
+	
+	double centerYaw = 1000;
+	MSG hotKeyMsg = { 0 };
+
+	int port = 2055;
 	int senderAddrSize;
 	WSADATA wsData;
 	SOCKET recvSocket;

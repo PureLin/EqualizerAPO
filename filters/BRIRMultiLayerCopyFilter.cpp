@@ -181,9 +181,9 @@ vector<CopyJobInfo> createOnechannelJob(int ch) {
 	return job;
 }
 
-vector<CopyJobInfo> createJob(int inputChannels) {
+vector<CopyJobInfo> createJob(int inputChannelCount) {
 	vector<CopyJobInfo> job;
-	for (int ch = 0; ch != inputChannels; ++ch) {
+	for (int ch = 0; ch != inputChannelCount; ++ch) {
 		vector<CopyJobInfo> oneChanneljob = createOnechannelJob(ch);
 		job.insert(job.end(), oneChanneljob.begin(), oneChanneljob.end());
 	}

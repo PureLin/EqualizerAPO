@@ -4,6 +4,7 @@
 #include <exception>
 #include <atltime.h>
 #include <math.h>
+
 using namespace std;
 
 namespace BRIRFILTER {
@@ -18,48 +19,8 @@ namespace BRIRFILTER {
 		return pos;
 	}
 
-	int getDirection() {
-		double* data = (double*)UDPReceiver::globalReceiver->unionBuff.data;
-		double yaw = data[3];
-		int direction = 180 - int(yaw / 4);
-		//avoid error yaw input
-		if (direction < 0 || direction > 360) {
-			direction = 180;
-		}
-		return direction;
-	}
-
-	void inline calculatePosAndVolume(int brSize, int degreePerBrir, int* brir, float* volume, int sourceMappingDirection, float volumePrecent) {
-		brir[0] = sourceMappingDirection / degreePerBrir;
-		brir[1] = (brir[0] + 1) % brSize;
-		double radian = float(sourceMappingDirection % degreePerBrir) / degreePerBrir * M_PI_2;
-		volume[0] = cos(radian);
-		volume[1] = sin(radian);
-		volume[0] *= volumePrecent;
-		volume[1] *= volumePrecent;
-	}
-
-	void inline copyInputData(bool* brirNeedConv, float*** inbuffer, int* brir, float* volume, unsigned int frameCount, float* oneChannelInput) {
-		for (int sch = 0; sch != 2; ++sch) {
-			if (volume[sch] == 0) {
-				continue;
-			}
-			if (!brirNeedConv[brir[sch]]) {
-				for (int er = 0; er != 2; ++er) {
-					for (unsigned f = 0; f < frameCount; f++) {
-						inbuffer[brir[sch]][er][f] = oneChannelInput[f] * volume[sch];
-					}
-				}
-			}
-			else {
-				for (int er = 0; er != 2; ++er) {
-					for (unsigned f = 0; f < frameCount; f++) {
-						inbuffer[brir[sch]][er][f] += oneChannelInput[f] * volume[sch];
-					}
-				}
-			}
-			brirNeedConv[brir[sch]] = true;
-		}
+	double inline volume(double distancePercent) {
+		return cos(distancePercent * M_PI_2);
 	}
 
 	bool mycomp(const std::wstring& lhs, const std::wstring& rhs)
@@ -125,6 +86,12 @@ namespace BRIRFILTER {
 	VOID CALLBACK toCreateBuff(PTP_CALLBACK_INSTANCE Instance, PVOID  Parameter, PTP_WORK Work) {
 		((BRIRFilter*)Parameter)->createBuff();
 	}
+	VOID CALLBACK toLoPass(PTP_CALLBACK_INSTANCE Instance, PVOID  Parameter, PTP_WORK Work) {
+		((BRIRFilter*)Parameter)->doLoPass();
+	}
+	VOID CALLBACK toInitLoHiPass(PTP_CALLBACK_INSTANCE Instance, PVOID  Parameter, PTP_WORK Work) {
+		((BRIRFilter*)Parameter)->initLoHiFilter();
+	}
 	VOID CALLBACK BRIRWorkCallBack(PTP_CALLBACK_INSTANCE Instance, PVOID Parameter, PTP_WORK Work) {
 		BRIRFilter::ConvWork* br = (BRIRFilter::ConvWork*)Parameter;
 		br->filter->doConv(br->convIndex);
@@ -136,12 +103,99 @@ using namespace BRIRFILTER;
 
 #pragma AVRT_CODE_BEGIN
 
+void inline BRIRFilter::calculateChannelToBrirDistance(int direction) {
+	swap(lastDistance, currentDistance);
+	for (int ch = 0; ch != inputChannelCount; ++ch) {
+		fill(currentDistance[ch], currentDistance[ch] + brirSize, degreePerBrir);
+		int sourceMappingDirection = overflow(direction + channelToHeadDegree[ch]);
+		int firstBrir = (sourceMappingDirection / degreePerBrir) % brirSize;
+		int secondBrir = (firstBrir + 1) % brirSize;
+		currentDistance[ch][firstBrir] = sourceMappingDirection % degreePerBrir;
+		currentDistance[ch][secondBrir] = degreePerBrir - sourceMappingDirection % degreePerBrir;
+	}
+}
+void inline BRIRFilter::resetBuff(unsigned int frameCount) {
+	for (int br = 0; br != brirSize; ++br) {
+		for (int er = 0; er != 2; ++er) {
+			fill(convBuffer[br][er], convBuffer[br][er] + frameCount, 0.0);
+		}
+	}
+}
+
+void inline BRIRFilter::copyInputData() {
+	resetBuff(frameCount);
+	for (int ch = 0; ch != inputChannelCount; ++ch) {
+		if (ch == lfeChannel) {
+			continue;
+		}
+		float* oneChannelInput = hiPassBuffer[ch];
+		if (!oneChannelInput) {
+			continue;
+		}
+		for (int br = 0; br != brirSize; ++br) {
+			float startDistance = lastDistance[ch][br];
+			float endDistance = currentDistance[ch][br];
+			if (startDistance == endDistance) {
+				if (startDistance == degreePerBrir) {
+					continue;
+				}
+				float v = volume(startDistance / degreePerBrir);
+				for (int er = 0; er != 2; ++er) {
+					for (unsigned f = 0; f < frameCount; ++f) {
+						convBuffer[br][er][f] += oneChannelInput[f] * v * volumePrecent;
+					}
+				}
+			}
+			else {
+				unsigned f = 0;
+				float diff = startDistance > endDistance ? -1 * moveSpeed : moveSpeed;
+				startDistance += diff;
+				for (; abs(startDistance - endDistance) > moveSpeed && f != frameCount; ++f, startDistance += diff) {
+					float v = volume(startDistance / degreePerBrir);
+					convBuffer[br][0][f] += oneChannelInput[f] * v * volumePrecent;
+					convBuffer[br][1][f] += oneChannelInput[f] * v * volumePrecent;
+				}
+				if (f != frameCount) {
+					float v = volume(endDistance / degreePerBrir);
+					for (; f != frameCount; ++f) {
+						convBuffer[br][0][f] += oneChannelInput[f] * v * volumePrecent;
+						convBuffer[br][1][f] += oneChannelInput[f] * v * volumePrecent;
+					}
+				}
+				else {
+					LogF(L"move speed to fast to follow %f to %f", lastDistance[ch][br], endDistance);
+					currentDistance[ch][br] = startDistance;
+				}
+			}
+			brirNeedConv[br] = true;
+		}
+	}
+}
+
+void BRIRFilter::doLoPass() {
+	fill(loPassBuffer, loPassBuffer + frameCount, 0.0);
+	for (int ch = 0; ch != inputChannelCount; ++ch) {
+		for (int f = 0; f != frameCount; ++f) {
+			loPassBuffer[f] += currentInput[ch][f];
+		}
+	}
+	loPassFilter->process(loPassBuffer, frameCount);
+	float maxVolume = 1;
+	for (int f = 0; f != frameCount; ++f) {
+		maxVolume = max(loPassBuffer[f], maxVolume);
+	}
+	maxVolume *= 2;
+	for (int f = 0; f != frameCount; ++f) {
+		loPassBuffer[f] /= maxVolume;
+	}
+}
+
 void BRIRFilter::doConv(int index) {
-	convFilters[index].process(inbuffer[index], inbuffer[index], frameCount);
+	convFilters[index].process(convBuffer[index], convBuffer[index], frameCount);
 }
 
 void BRIRFilter::create() {
-	if (this->status == creating) {
+	if (status == creating) {
 		if (!UDPReceiver::initUdpReceiver(udpPort)) {
 			return;
 		}
@@ -157,7 +211,7 @@ void BRIRFilter::create() {
 	}
 }
 
-BRIRFilter::BRIRFilter(int port,wstring name, wstring path,int diff[8]) {
+BRIRFilter::BRIRFilter(int port, wstring name, wstring path, int degree[8], float bassPercent, int receiveType) {
 	this->udpPort = port;
 	this->name = name;
 	if (name.size() != 0) {
@@ -168,8 +222,12 @@ BRIRFilter::BRIRFilter(int port,wstring name, wstring path,int diff[8]) {
 	}
 	this->brirPath = path;
 	for (int i = 0; i != 8; ++i) {
-		SourceToHeadDiff[i] = diff[i];
+		channelToHeadDegree[i] = degree[i];
 	}
+	this->bassPercent = bassPercent;
+	this->udpDataType = (UDPDataType)receiveType;
+	SYSTEM_INFO sysInfo;
+	GetSystemInfo(&sysInfo);
 	create();
 }
 
@@ -178,27 +236,55 @@ BRIRFilter::~BRIRFilter() {
 	if (status != error) {
 		for (int br = 0; br != brirSize; ++br) {
 			convAllocator.destroy(convFilters + br);
-			delete[] inbuffer[br][0];
-			delete[] inbuffer[br][1];
+			delete[] convBuffer[br][0];
+			delete[] convBuffer[br][1];
 		}
 		convAllocator.deallocate(convFilters, brirSize);
-		delete[] inbuffer;
+		delete[] convBuffer;
+
+		for (int ch = 0; ch != inputChannelCount; ++ch) {
+			delete[] lastDistance[ch];
+			delete[] currentDistance[ch];
+			delete[] hiPassBuffer[ch];
+		}
+		delete[] lastDistance;
+		delete[] currentDistance;
+		delete[] loPassBuffer;
+
 		delete[] brirNeedConv;
-		delete[] initWorks;
+		delete hiPassFilter;
+		delete loPassFilter;
 	}
 }
 
 void BRIRFilter::createBuff() {
-	volumePrecent = 4 / double(inputChannels + 4);
-	degreePerBrir = 360 / brirSize; 
 	brirNeedConv = new bool[brirSize];
-	inbuffer = new float** [brirSize];
+	convBuffer = new float** [brirSize];
 	for (int br = 0; br != brirSize; ++br) {
-		inbuffer[br] = new float* [2];
+		convBuffer[br] = new float* [2];
 		for (int er = 0; er != 2; ++er) {
-			inbuffer[br][er] = new float[frameCount];
+			convBuffer[br][er] = new float[frameCount];
 		}
 	}
+
+	loPassBuffer = new float[frameCount];
+
+	hiPassBuffer = new float* [inputChannelCount];
+	lastDistance = new int* [inputChannelCount];
+	currentDistance = new int* [inputChannelCount];
+	for (int ch = 0; ch != inputChannelCount; ++ch) {
+		hiPassBuffer[ch] = new float[frameCount];
+		lastDistance[ch] = new int[brirSize];
+		fill(lastDistance[ch], lastDistance[ch] + brirSize, degreePerBrir);
+		currentDistance[ch] = new int[brirSize];
+		fill(currentDistance[ch], currentDistance[ch] + brirSize, degreePerBrir);
+	}
+}
+
+void BRIRFilter::initLoHiFilter() {
+	int sampleRate = sampleRates[currentSampleRateIndex];
+	loPassFilter = new BRIRLowPassFilter(sampleRate, frameCount);
+	hiPassFilter = new BRIRHighPassFilter(sampleRate, frameCount, inputChannelCount, lfeChannel);
 }
 
 void BRIRFilter::init() {
@@ -213,9 +299,14 @@ void BRIRFilter::init() {
 		status = error;
 		return;
 	}
-	createBuffWork = CreateThreadpoolWork(toCreateBuff, this, NULL);
+	volumePrecent = 4 / double(inputChannelCount + 4);
+	degreePerBrir = 360 / brirSize;
+	moveSpeed = max(moveSpeed, degreePerBrir / frameCount);
+	PTP_WORK  createBuffWork = CreateThreadpoolWork(toCreateBuff, this, NULL);
 	SubmitThreadpoolWork(createBuffWork);
-	initWorks = new PTP_WORK[brirSize];
+	PTP_WORK loHiPassWork = CreateThreadpoolWork(toInitLoHiPass, this, NULL);
+	SubmitThreadpoolWork(loHiPassWork);
+	PTP_WORK* initWorks = new PTP_WORK[brirSize];
 	convFilters = convAllocator.allocate(brirSize);
 	int index = 0;
 	for (wstring& s : files) {
@@ -231,6 +322,9 @@ void BRIRFilter::init() {
 		WaitForThreadpoolWorkCallbacks(initWorks[ch], false);
 		CloseThreadpoolWork(initWorks[ch]);
 	}
+	delete[] initWorks;
+	WaitForThreadpoolWorkCallbacks(loHiPassWork, false);
+	CloseThreadpoolWork(loHiPassWork);
 	WaitForThreadpoolWorkCallbacks(createBuffWork, false);
 	CloseThreadpoolWork(createBuffWork);
 	status = processing;
@@ -240,7 +334,11 @@ std::vector <std::wstring> BRIRFilter::initialize(float sampleRate, unsigned int
 	std::vector <std::wstring> outputchannel;
 	outputchannel.push_back(name + L"-L");
 	outputchannel.push_back(name + L"-R");
-	inputChannels = min((int)channelNames.size(), 8);
+	inputChannelCount = min((int)channelNames.size(), 8);
+	if (inputChannelCount == 8) {
+		hasLFEChannel = true;
+		lfeChannel = 4;
+	}
 	for (int sr = 0; sr != 4; ++sr) {
 		if (sampleRates[sr] == sampleRate) {
 			currentSampleRateIndex = sr;
@@ -250,6 +348,7 @@ std::vector <std::wstring> BRIRFilter::initialize(float sampleRate, unsigned int
 	if (currentSampleRateIndex != -1) {
 		init();
 	}
+	LogF(L"init BRIRFilter %f %d %d", sampleRate, maxFrameCount, inputChannelCount);
 	return outputchannel;
 }
 
@@ -265,18 +364,20 @@ void BRIRFilter::process(float** output, float** input, unsigned int frameCount)
 	}
 	try {
 		this->frameCount = frameCount;
-		int direction = getDirection();
-		fill(brirNeedConv, brirNeedConv + brirSize, 0);
-		int brir[2];
-		float volume[2];
-		for (int ch = 0; ch != inputChannels; ++ch) {
-			int sourceMappingDirection = overflow(direction + SourceToHeadDiff[ch]);
-			//for each source channel need 2 brir to sim the actual pos
-			//the volume will depend on direction,colser bigger
-			calculatePosAndVolume(brirSize, degreePerBrir, brir, volume, sourceMappingDirection, volumePrecent);
-			//first time input data need be copy not add
-			copyInputData(brirNeedConv, inbuffer, brir, volume, frameCount, input[ch]);
+		this->currentInput = input;
+		PTP_WORK loPass = CreateThreadpoolWork(toLoPass, this, NULL);
+		SubmitThreadpoolWork(loPass);
+		for (int ch = 0; ch != inputChannelCount; ++ch) {
+			if (ch == lfeChannel) {
+				continue;
+			}
+			memcpy(hiPassBuffer[ch], input[ch], frameCount * sizeof(float));
 		}
+		hiPassFilter->process(hiPassBuffer, frameCount);
+		fill(brirNeedConv, brirNeedConv + brirSize, 0);
+		int direction = UDPReceiver::globalReceiver->getDirection(udpDataType);
+		calculateChannelToBrirDistance(direction);
+		copyInputData();
 		int jobIndex = 0;
 		for (int br = 0; br != brirSize; ++br) {
 			if (brirNeedConv[br]) {
@@ -294,10 +395,16 @@ void BRIRFilter::process(float** output, float** input, unsigned int frameCount)
 			int br = convWorks[jb].convIndex;
 			for (int ear = 0; ear != 2; ++ear) {
 				for (unsigned f = 0; f < frameCount; f++) {
-					output[ear][f] += inbuffer[br][ear][f];
+					output[ear][f] += convBuffer[br][ear][f];
 				}
 			}
 			CloseThreadpoolWork(works[jb]);
+		}
+		WaitForThreadpoolWorkCallbacks(loPass, false);
+		for (int ear = 0; ear != 2; ++ear) {
+			for (unsigned f = 0; f < frameCount; f++) {
+				output[ear][f] += loPassBuffer[f] * bassPercent;
+			}
 		}
 	}
 	catch (exception e) {

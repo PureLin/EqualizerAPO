@@ -258,12 +258,15 @@ double mainTest(int argc, char** argv)
 	}
 }
 
-void runBatchTest() {
-	int c = 3;
-	char** v = new char* [3];
+void runBatchTest(unsigned sampleRate) {
+	int c = 5;
+	char** v = new char* [5];
 	v[0] = "BatchTest.exe";
 	v[1] = "-c";
 	v[2] = "2";
+	v[3] = "-r";
+	char buffer[100];
+	v[4] = itoa(sampleRate, buffer, 10);
 	double channel2MaxTime = 0;
 	for (int i = 0; i != 4; ++i) {
 		channel2MaxTime = max(mainTest(c, v), channel2MaxTime);
@@ -361,7 +364,7 @@ int main(int argc, char** argv) {
 	cmd.parse(argc, argv);
 
 	if (batchArg.getValue()) {
-		runBatchTest();
+		runBatchTest(rateArg.getValue());
 		return 0;
 	}
 	if (processArg.getValue().length() != 0) {

@@ -8,15 +8,18 @@
 #include <io.h>
 #include <cstdio>
 #include <map>
+#include "../BiQuadFilter.h"
+#include "BRIRHighPassFilter.h"
+#include "BRIRLowPassFilter.h"
 
 #pragma AVRT_VTABLES_BEGIN
 class BRIRFilter : public IFilter
 {
 public:
-	BRIRFilter(int port,std::wstring name, std::wstring path, int SourceToHeadDiff[8]);
+	BRIRFilter(int port, std::wstring name, std::wstring path, int channelToHeadDegree[8],float bassPercent,int receiveType);
 	virtual ~BRIRFilter();
 
-	bool getAllChannels() override { return true; }
+	bool getAllChannels() override { return false; }
 	bool getInPlace() override { return false; }
 	std::vector<std::wstring> initialize(float sampleRate, unsigned maxFrameCount, std::vector<std::wstring> channelNames) override;
 	void process(float** output, float** input, unsigned frameCount) override;
@@ -28,14 +31,24 @@ public:
 	void createBuff();
 	void create();
 	void init();
+	void initLoHiFilter();
+	void doLoPass();
 	void doConv(int index);
 private:
+
+	void inline calculateChannelToBrirDistance(int direction);
+	void inline copyInputData();
+	void inline resetBuff(unsigned int frameCount);
+
 	int currentSampleRateIndex = -1;
 	int sampleRates[4]{ 44100,48000,88200,96000 };
-
-	int inputChannels = 2;
+	
+	int inputChannelCount = 2;
+	bool hasLFEChannel = false;
+	int lfeChannel = -1;
 	float volumePrecent = 0.5;
-	int SourceToHeadDiff[8]{ -30, 30, 0, 0, -135, 135, -90, 90 };
+	float bassPercent = 0.8;
+	int channelToHeadDegree[8]{ -30, 30, 0, 0, -135, 135, -90, 90 };
 	std::map<int, std::vector<std::wstring>> brFilesMap;
 	std::allocator<BRIRConvolutionFilter> convAllocator;
 
@@ -47,12 +60,19 @@ private:
 	int degreePerBrir;
 	BRIRConvolutionFilter* convFilters;
 	unsigned int frameCount = 0;
-	float*** inbuffer;
+
+	BRIRLowPassFilter* loPassFilter;
+	BRIRHighPassFilter* hiPassFilter;
+	float* loPassBuffer;
+	float** hiPassBuffer;
+	float** currentInput;
+	float*** convBuffer;
+
+	float moveSpeed = 0.15;
+	int** lastDistance;
+	int** currentDistance;
 	bool* brirNeedConv;
 
-	//init thread
-	PTP_WORK  createBuffWork;
-	PTP_WORK* initWorks;
 	//thread pool
 	PTP_WORK works[14];
 	ConvWork convWorks[14];
@@ -63,5 +83,6 @@ private:
 		processing,
 		error
 	} status = creating;
+	UDPDataType udpDataType = number;
 };
 #pragma AVRT_VTABLES_END

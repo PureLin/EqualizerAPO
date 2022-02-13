@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include <sstream>
+#include <locale>
+#include <codecvt>
+#include <string>
 
 #include "helpers/LogHelper.h"
 #include "helpers/StringHelper.h"
@@ -9,36 +12,19 @@
 #include "parser/LogicalOperators.h"
 #include "FilterEngine.h"
 #include "BRIRCopyFilterFactory.h"
-#include "BRIRCopyFilter.h"
 #include "BRIRMultiLayerCopyFilter.h"
 #include "BRIR/BRIRFilter.h" 
+#include "brir/lib_json/json.h"
+
 using namespace std;
 using namespace mup;
 
 vector<IFilter*> BRIRCopyFilterFactory::createFilter(const wstring& configPath, wstring& command, wstring& parameters)
 {
 	IFilter* filter = NULL;
-	if (command == L"BRIRCopy")
-	{
-		LogF(L"create BRIR copy filter");
-		void* mem = MemoryHelper::alloc(sizeof(BRIRCopyFilter));
-
-		wchar_t filePath[MAX_PATH];
-		configPath._Copy_s(filePath, sizeof(filePath) / sizeof(wchar_t), MAX_PATH);
-		if (configPath.size() < MAX_PATH)
-			filePath[configPath.size()] = L'\0';
-		else
-			filePath[MAX_PATH - 1] = L'\0';
-		PathRemoveFileSpecW(filePath);
-		wstring absolutePath = filePath;
-		absolutePath.append(L"\\brir\\");
-		filter = new(mem)BRIRCopyFilter(2055, absolutePath);
-	}
 	if (command == L"BRIR")
 	{
-		LogF(L"create BRIR filter");
 		void* mem = MemoryHelper::alloc(sizeof(BRIRFilter));
-
 		wchar_t filePath[MAX_PATH];
 		configPath._Copy_s(filePath, sizeof(filePath) / sizeof(wchar_t), MAX_PATH);
 		if (configPath.size() < MAX_PATH)
@@ -47,17 +33,35 @@ vector<IFilter*> BRIRCopyFilterFactory::createFilter(const wstring& configPath, 
 			filePath[MAX_PATH - 1] = L'\0';
 		PathRemoveFileSpecW(filePath);
 		wstring absolutePath = filePath;
-		wstring name;
-		wstringstream stream(parameters);
-		stream >> name;
 		absolutePath.append(L"\\brir\\");
-		int sourceToHeadDiff[8]{ -30, 30, 0, 0, -135, 135, -90, 90 };
-		int index = 0;
-		int diff;
-		while (stream >> diff) {
-			sourceToHeadDiff[index++] = diff;
+		int channelToHeadDegree[8]{ -30, 30, 0, 0, -135, 135, -90, 90 };
+		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+		string jsonStr = converter.to_bytes(parameters);
+		string err;
+		Json::Value json;
+		if (!parse(&jsonStr, &json, &err)) {
+			LogF(L"Failed to parse json input %s, erro: %s", jsonStr, err);
 		}
-		filter = new(mem)BRIRFilter(2055, name, absolutePath, sourceToHeadDiff);
+		else {
+			wstring name = converter.from_bytes(json["name"].asString());
+			int receiveType = 0;
+			int port = 2055;
+			if (json["receiveType"].isInt()) {
+				receiveType = json["receiveType"].asInt();
+			}
+			if (json["port"].isInt()) {
+				port = json["port"].asInt();
+			}
+			float bassPercent = json["bassVolume"].asFloat();
+			for (int ch = 0; ch != 8; ++ch) {
+				if (!json["directions"][ch].isInt()) {
+					break;
+				}
+				channelToHeadDegree[ch] = json["directions"][ch].asInt();
+			}
+			LogF(L"create BRIR filter %d %ls %f %d", port, name, bassPercent, receiveType);
+			filter = new(mem)BRIRFilter(port, name, absolutePath, channelToHeadDegree, bassPercent, receiveType);
+		}
 	}
 	if (command == L"BRIRMulti")
 	{

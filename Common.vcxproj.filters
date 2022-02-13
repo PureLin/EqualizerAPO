@@ -144,19 +144,10 @@
     <ClInclude Include="parser\LogicalOperators.h">
       <Filter>parser</Filter>
     </ClInclude>
-    <ClInclude Include="filters\BRIRCopyFilter.h">
-      <Filter>brir</Filter>
-    </ClInclude>
     <ClInclude Include="filters\BRIRCopyFilterFactory.h">
       <Filter>brir</Filter>
     </ClInclude>
     <ClInclude Include="filters\UDPReceiver.h">
-      <Filter>brir</Filter>
-    </ClInclude>
-    <ClInclude Include="filters\ChannelCopyTestFilter.h">
-      <Filter>brir</Filter>
-    </ClInclude>
-    <ClInclude Include="filters\ChannelCopyTestFilterFactory.h">
       <Filter>brir</Filter>
     </ClInclude>
     <ClInclude Include="direction\Quaternion.h">
@@ -175,6 +166,45 @@
       <Filter>brir</Filter>
     </ClInclude>
     <ClInclude Include="filters\BRIR\BRIRConvolutionFilter.h">
+      <Filter>brir</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\lib_json\json_tool.h">
+      <Filter>brir\json</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\lib_json\allocator.h">
+      <Filter>brir\json</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\lib_json\assertions.h">
+      <Filter>brir\json</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\lib_json\config.h">
+      <Filter>brir\json</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\lib_json\forwards.h">
+      <Filter>brir\json</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\lib_json\json.h">
+      <Filter>brir\json</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\lib_json\json_features.h">
+      <Filter>brir\json</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\lib_json\reader.h">
+      <Filter>brir\json</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\lib_json\value.h">
+      <Filter>brir\json</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\lib_json\version.h">
+      <Filter>brir\json</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\lib_json\writer.h">
+      <Filter>brir\json</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\BRIRHighPassFilter.h">
+      <Filter>brir</Filter>
+    </ClInclude>
+    <ClInclude Include="filters\BRIR\BRIRLowPassFilter.h">
       <Filter>brir</Filter>
     </ClInclude>
   </ItemGroup>
@@ -306,16 +336,7 @@
     <ClCompile Include="parser\LogicalOperators.cpp">
       <Filter>parser</Filter>
     </ClCompile>
-    <ClCompile Include="filters\BRIRCopyFilter.cpp">
-      <Filter>brir</Filter>
-    </ClCompile>
     <ClCompile Include="filters\BRIRCopyFilterFactory.cpp">
-      <Filter>brir</Filter>
-    </ClCompile>
-    <ClCompile Include="filters\ChannelCopyTestFilter.cpp">
-      <Filter>brir</Filter>
-    </ClCompile>
-    <ClCompile Include="filters\ChannelCopyTestFilterFactory.cpp">
       <Filter>brir</Filter>
     </ClCompile>
     <ClCompile Include="filters\UDPReceiver.cpp">
@@ -334,6 +355,21 @@
       <Filter>brir</Filter>
     </ClCompile>
     <ClCompile Include="filters\BRIR\BRIRConvolutionFilter.cpp">
+      <Filter>brir</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\BRIR\lib_json\json_reader.cpp">
+      <Filter>brir\json</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\BRIR\lib_json\json_value.cpp">
+      <Filter>brir\json</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\BRIR\lib_json\json_writer.cpp">
+      <Filter>brir\json</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\BRIR\BRIRHighPassFilter.cpp">
+      <Filter>brir</Filter>
+    </ClCompile>
+    <ClCompile Include="filters\BRIR\BRIRLowPassFilter.cpp">
       <Filter>brir</Filter>
     </ClCompile>
   </ItemGroup>
@@ -359,8 +395,14 @@
     <Filter Include="direction">
       <UniqueIdentifier>{63d7623a-2b85-4231-8710-09d8375cc11c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="brir\json">
+      <UniqueIdentifier>{ed86346e-ce19-40aa-8bef-0a40e1d82100}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="EqualizerAPO.licenseheader" />
+    <None Include="filters\BRIR\lib_json\json_valueiterator.inl">
+      <Filter>brir\json</Filter>
+    </None>
   </ItemGroup>
 </Project>
