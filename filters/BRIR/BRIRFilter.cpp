@@ -128,7 +128,7 @@ void inline BRIRFilter::copyInputData() {
 		if (ch == lfeChannel) {
 			continue;
 		}
-		float* oneChannelInput = hiPassBuffer[ch];
+		float* oneChannelInput = currentInput[ch];
 		if (!oneChannelInput) {
 			continue;
 		}
@@ -245,14 +245,12 @@ BRIRFilter::~BRIRFilter() {
 		for (int ch = 0; ch != inputChannelCount; ++ch) {
 			delete[] lastDistance[ch];
 			delete[] currentDistance[ch];
-			delete[] hiPassBuffer[ch];
 		}
 		delete[] lastDistance;
 		delete[] currentDistance;
 		delete[] loPassBuffer;
 
 		delete[] brirNeedConv;
-		delete hiPassFilter;
 		delete loPassFilter;
 	}
 }
@@ -269,11 +267,9 @@ void BRIRFilter::createBuff() {
 
 	loPassBuffer = new float[frameCount];
 
-	hiPassBuffer = new float* [inputChannelCount];
 	lastDistance = new int* [inputChannelCount];
 	currentDistance = new int* [inputChannelCount];
 	for (int ch = 0; ch != inputChannelCount; ++ch) {
-		hiPassBuffer[ch] = new float[frameCount];
 		lastDistance[ch] = new int[brirSize];
 		fill(lastDistance[ch], lastDistance[ch] + brirSize, degreePerBrir);
 		currentDistance[ch] = new int[brirSize];
@@ -284,7 +280,6 @@ void BRIRFilter::createBuff() {
 void BRIRFilter::initLoHiFilter() {
 	int sampleRate = sampleRates[currentSampleRateIndex];
 	loPassFilter = new BRIRLowPassFilter(sampleRate, frameCount);
-	hiPassFilter = new BRIRHighPassFilter(sampleRate, frameCount, inputChannelCount, lfeChannel);
 }
 
 void BRIRFilter::init() {
@@ -337,7 +332,7 @@ std::vector <std::wstring> BRIRFilter::initialize(float sampleRate, unsigned int
 	inputChannelCount = min((int)channelNames.size(), 8);
 	if (inputChannelCount == 8) {
 		hasLFEChannel = true;
-		lfeChannel = 4;
+		lfeChannel = 3;
 	}
 	for (int sr = 0; sr != 4; ++sr) {
 		if (sampleRates[sr] == sampleRate) {
@@ -367,13 +362,6 @@ void BRIRFilter::process(float** output, float** input, unsigned int frameCount)
 		this->currentInput = input;
 		PTP_WORK loPass = CreateThreadpoolWork(toLoPass, this, NULL);
 		SubmitThreadpoolWork(loPass);
-		for (int ch = 0; ch != inputChannelCount; ++ch) {
-			if (ch == lfeChannel) {
-				continue;
-			}
-			memcpy(hiPassBuffer[ch], input[ch], frameCount * sizeof(float));
-		}
-		hiPassFilter->process(hiPassBuffer, frameCount);
 		fill(brirNeedConv, brirNeedConv + brirSize, 0);
 		int direction = UDPReceiver::globalReceiver->getDirection(udpDataType);
 		calculateChannelToBrirDistance(direction);

@@ -6,9 +6,9 @@ struct Position {
 	int roll;
 
 	Position(double* data) {
-		yaw = data[3] / 4;
-		pitch = data[4] / 4;
-		roll = data[5] / 4;
+		yaw = data[3];
+		pitch = data[4];
+		roll = data[5];
 	}
 };
 

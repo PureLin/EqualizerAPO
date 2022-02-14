@@ -18,7 +18,7 @@ void Quaternion::SetEulerAngle(float yaw, float pitch, float roll)
 	float  angle;
 	float  sinRoll, sinPitch, sinYaw, cosRoll, cosPitch, cosYaw;
 
-	angle = yaw / 180 * M_PI_2;
+	angle = yaw / 180 * M_PI_2 * -1;
 	sinYaw = sin(angle);
 	cosYaw = cos(angle);
 

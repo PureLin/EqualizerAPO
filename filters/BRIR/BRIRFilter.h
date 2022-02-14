@@ -62,9 +62,7 @@ private:
 	unsigned int frameCount = 0;
 
 	BRIRLowPassFilter* loPassFilter;
-	BRIRHighPassFilter* hiPassFilter;
 	float* loPassBuffer;
-	float** hiPassBuffer;
 	float** currentInput;
 	float*** convBuffer;
 
