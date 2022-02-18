@@ -135,7 +135,7 @@ void hcPutSingle(HConvSingle *filter, float *x)
 
 void hcProcessSingle(HConvSingle *filter)
 {
-#if 0
+#if 1
 	int s, n, start, stop, flen;
 	float *x_real;
 	float *x_imag;
@@ -165,7 +165,7 @@ void hcProcessSingle(HConvSingle *filter)
 		}
 	}
 	filter->step = (filter->step + 1) % filter->maxstep;
-#endif
+#else
 
 	int s, n, start, stop, flen, flen4;
 	__m128 *x4_real;
@@ -224,6 +224,7 @@ void hcProcessSingle(HConvSingle *filter)
 		                x_imag[flen] * h_real[flen];
 	}
 	filter->step = (filter->step + 1) % filter->maxstep;
+#endif
 }
 
 

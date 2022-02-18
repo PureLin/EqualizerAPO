@@ -16,7 +16,7 @@
 class BRIRFilter : public IFilter
 {
 public:
-	BRIRFilter(int port, std::wstring name, std::wstring path, int channelToHeadDegree[8],float bassPercent,int receiveType);
+	BRIRFilter(int port, std::wstring name, std::wstring path, int channelToHeadDegree[8],float bassPercent);
 	virtual ~BRIRFilter();
 
 	bool getAllChannels() override { return false; }
@@ -46,6 +46,8 @@ private:
 	int inputChannelCount = 2;
 	bool hasLFEChannel = false;
 	int lfeChannel = -1;
+	int* inputHasData;
+
 	float volumePrecent = 0.5;
 	float bassPercent = 0.8;
 	int channelToHeadDegree[8]{ -30, 30, 0, 0, -135, 135, -90, 90 };
@@ -59,6 +61,7 @@ private:
 	int brirSize;
 	int degreePerBrir;
 	BRIRConvolutionFilter* convFilters;
+	unsigned int maxBrFrameCount = 0;
 	unsigned int frameCount = 0;
 
 	BRIRLowPassFilter* loPassFilter;
@@ -66,10 +69,9 @@ private:
 	float** currentInput;
 	float*** convBuffer;
 
-	float moveSpeed = 0.15;
 	int** lastDistance;
 	int** currentDistance;
-	bool* brirNeedConv;
+	int* brirNeedConv;
 
 	//thread pool
 	PTP_WORK works[14];
@@ -81,6 +83,5 @@ private:
 		processing,
 		error
 	} status = creating;
-	UDPDataType udpDataType = number;
 };
 #pragma AVRT_VTABLES_END

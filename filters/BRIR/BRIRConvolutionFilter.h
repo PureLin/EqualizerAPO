@@ -30,8 +30,9 @@ public:
 	virtual ~BRIRConvolutionFilter();
 	void initialize();
 	void process(float** output, float** input, unsigned frameCount);
+	unsigned fileFrameCount = 0;
     volatile int sampleRate;
-    volatile unsigned maxFrameCount;
+    volatile unsigned maxInputFrameCount;
 private:
 	void cleanup();
 

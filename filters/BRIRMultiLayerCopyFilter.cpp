@@ -6,23 +6,27 @@
 #include <math.h>
 #include "../direction/DriectionCal.h"
 #include<map>
-
 using namespace std;
 
 #pragma AVRT_VTABLES_BEGIN
 static const int layDegree[5]{ -60,-30,0,30,60 };
-static const int layPosCount[5]{ 8,12,12,12,8 };
-static const int layHorzionDegree[5]{ 45,30,30,30,45 };
+static const int layPosCount = 12;
+static const int layHorzionDegree = 30;
 static float volumePrecent;
 
-ConvolutionFilter* BRIRMultiLayerCopyFilter::convFilters[5][12];
+BRIRConvolutionFilter* BRIRMultiLayerCopyFilter::convFilters[5][12];
+
+
 unsigned int BRIRMultiLayerCopyFilter::bufsize = 10240;
-unsigned int BRIRMultiLayerCopyFilter::brFrameCount = 0;
+unsigned int BRIRMultiLayerCopyFilter::maxBrFrameCount = 0;
+unsigned int BRIRMultiLayerCopyFilter::frameCount = 0;
+
+allocator<BRIRConvolutionFilter> BRIRMultiLayerCopyFilter::convAllocator;
 
 //5 layer->max 12 brir->2 ear for each brir
 float* BRIRMultiLayerCopyFilter::mlInBuffer[5][12][2];
 //indicate this brir need conv
-boolean BRIRMultiLayerCopyFilter::brirNeedConv[5][12];
+int BRIRMultiLayerCopyFilter::brirNeedConv[5][12];
 
 ConvJobInfo BRIRMultiLayerCopyFilter::convJobs[32];
 PTP_WORK BRIRMultiLayerCopyFilter::works[32];
@@ -46,23 +50,19 @@ void BRIRMultiLayerCopyFilter::initMlBuff() {
 }
 
 void inline BRIRMultiLayerCopyFilter::copyInputData(vector<CopyJobInfo>& jobs, float** input, unsigned int frameCount) {
+	for (int lay = 0; lay != 5; ++lay) {
+		for (int br = 0; br != 12; ++br) {
+			fill(mlInBuffer[lay][br][0], mlInBuffer[lay][br][0] + frameCount, 0);
+			fill(mlInBuffer[lay][br][1], mlInBuffer[lay][br][1] + frameCount, 0);
+		}
+	}
 	for (CopyJobInfo job : jobs) {
-		if (!brirNeedConv[job.layer][job.brirPos]) {
-			for (int er = 0; er != 2; ++er) {
-				for (unsigned f = 0; f < frameCount; f++) {
-					mlInBuffer[job.layer][job.brirPos][er][f] = input[job.sourceChannel][f] * job.volume;
-				}
+		for (int er = 0; er != 2; ++er) {
+			for (unsigned f = 0; f < frameCount; f++) {
+				mlInBuffer[job.layer][job.brirPos][er][f] += input[job.sourceChannel][f] * job.volume;
 			}
 		}
-		else {
-			TraceFStatic(L"Reuse br channel %d-%d", job.layer, job.brirPos);
-			for (int er = 0; er != 2; ++er) {
-				for (unsigned f = 0; f < frameCount; f++) {
-					mlInBuffer[job.layer][job.brirPos][er][f] += input[job.sourceChannel][f] * job.volume;
-				}
-			}
-		}
-		brirNeedConv[job.layer][job.brirPos] = true;
+		brirNeedConv[job.layer][job.brirPos] = maxBrFrameCount / frameCount + 1;
 	}
 }
 
@@ -72,12 +72,6 @@ void inline calculateVolume(double toLeftLowPercent, double* volume) {
 	volume[1] = sin(degree);
 }
 
-
-ConvolutionFilter* createFilter(wstring& filePath) {
-	void* mem = MemoryHelper::alloc(sizeof(ConvolutionFilter));
-	return new(mem)ConvolutionFilter(filePath);
-}
-
 BRIRMultiLayerCopyFilter::BRIRMultiLayerCopyFilter(int port, wstring path) {
 	if (!init) {
 		try {
@@ -85,11 +79,12 @@ BRIRMultiLayerCopyFilter::BRIRMultiLayerCopyFilter(int port, wstring path) {
 			bool result = UDPReceiver::initUdpReceiver(port);
 			LogF(L"Create UDPReceiver Finished");
 			for (int lay = 0; lay != 5; ++lay) {
-				for (int ch = 0; ch != layPosCount[lay]; ++ch) {
+				for (int br = 0; br != layPosCount; ++br) {
 					wstring configPath(path);
-					configPath.append(to_wstring(lay)).append(L"\\").append(to_wstring(ch)).append(L".wav");
-					LogF(L"Create ConvFilter %d-%d %ls", lay, ch, configPath.c_str());
-					convFilters[lay][ch] = createFilter(configPath);
+					configPath.append(to_wstring(lay)).append(L"\\").append(to_wstring(br)).append(L".wav");
+					LogF(L"Create ConvFilter %d-%d %ls", lay, br, configPath.c_str());
+					convFilters[lay][br] = convAllocator.allocate(1);
+					convAllocator.construct(convFilters[lay][br], configPath);
 				}
 			}
 			LogF(L"create buffsize %d", bufsize);
@@ -114,7 +109,7 @@ BRIRMultiLayerCopyFilter::~BRIRMultiLayerCopyFilter() {
 
 void BRIRMultiLayerCopyFilter::processOneChannelBrir(ConvJobInfo* job) {
 	__try {
-		convFilters[job->layer][job->pos]->process(mlInBuffer[job->layer][job->pos], mlInBuffer[job->layer][job->pos], brFrameCount);
+		convFilters[job->layer][job->pos]->process(mlInBuffer[job->layer][job->pos], mlInBuffer[job->layer][job->pos], frameCount);
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {}
 }
@@ -133,15 +128,14 @@ ConvWorkCallBack(
 
 void inline createLayerJob(vector<CopyJobInfo>& job, int lay, int horizon, double volume, int ch) {
 	horizon += 180;
-	int degree = layHorzionDegree[lay];
-	if (horizon % degree == 0) {
-		job.push_back(CopyJobInfo(lay, horizon / degree, ch, volume));
+	if (horizon % layHorzionDegree == 0) {
+		job.push_back(CopyJobInfo(lay, horizon / layHorzionDegree, ch, volume));
 	}
 	else {
 		double horizonVolume[2];
-		calculateVolume(float(horizon % degree) / degree, horizonVolume);
-		job.push_back(CopyJobInfo(lay, horizon / degree, ch, volume * horizonVolume[0]));
-		job.push_back(CopyJobInfo(lay, horizon / degree + 1, ch, volume * horizonVolume[1]));
+		calculateVolume(float(horizon % layHorzionDegree) / layHorzionDegree, horizonVolume);
+		job.push_back(CopyJobInfo(lay, horizon / layHorzionDegree, ch, volume * horizonVolume[0]));
+		job.push_back(CopyJobInfo(lay, horizon / layHorzionDegree + 1, ch, volume * horizonVolume[1]));
 	}
 }
 
@@ -150,6 +144,7 @@ vector<CopyJobInfo> createOnechannelJob(int ch) {
 	int downDegree = -1000;
 	SoundDirection d = actualDirection[ch];
 	int lay = 0;
+	double volume[2];
 	for (; lay != 5; ++lay) {
 		if (layDegree[lay] < d.vertical) {
 			downDegree = layDegree[lay];
@@ -160,7 +155,6 @@ vector<CopyJobInfo> createOnechannelJob(int ch) {
 			break;
 		}
 		else {
-			double volume[2];
 			calculateVolume(float(d.vertical - downDegree) / 30.0, volume);
 			createLayerJob(job, lay - 1, d.horizon, volume[0], ch);
 			createLayerJob(job, lay, d.horizon, volume[1], ch);
@@ -170,13 +164,9 @@ vector<CopyJobInfo> createOnechannelJob(int ch) {
 	if (lay == 5) {
 		createLayerJob(job, 4, d.horizon, 1.0, ch);
 	}
-	
-	double totalVolume = 0;
+
 	for (CopyJobInfo& j : job) {
-		totalVolume += j.volume * j.volume;
-	}
-	for (CopyJobInfo& j : job) {
-		j.volume = j.volume * volumePrecent / totalVolume;
+		j.volume = j.volume * volumePrecent;
 	}
 	return job;
 }
@@ -199,8 +189,8 @@ std::vector <std::wstring> BRIRMultiLayerCopyFilter::initialize(float sampleRate
 		TraceF(L"in channel: %br", br);
 	}
 	std::vector <std::wstring> outputchannel;
-	outputchannel.push_back(L"HRIRL");
-	outputchannel.push_back(L"HRIRR");
+	outputchannel.push_back(L"L");
+	outputchannel.push_back(L"R");
 	if (!init) {
 		LogF(L"not init !");
 	}
@@ -211,12 +201,16 @@ std::vector <std::wstring> BRIRMultiLayerCopyFilter::initialize(float sampleRate
 			initMlBuff();
 		}
 		for (int lay = 0; lay != 5; ++lay) {
-			for (int ch = 0; ch != layPosCount[lay]; ++ch) {
+			for (int ch = 0; ch != layPosCount; ++ch) {
 				TraceF(L"init convFilter %d", ch);
-				convFilters[lay][ch]->initialize(sampleRate, maxFrameCount, convChannel);
+				convFilters[lay][ch]->sampleRate = sampleRate;
+				convFilters[lay][ch]->maxInputFrameCount = maxFrameCount;
+				convFilters[lay][ch]->initialize();
+				maxBrFrameCount = max(maxBrFrameCount, convFilters[lay][ch]->fileFrameCount);
 			}
 		}
 	}
+	fill(brirNeedConv[0], brirNeedConv[0] + 60, 0);
 	return outputchannel;
 }
 
@@ -227,21 +221,17 @@ void BRIRMultiLayerCopyFilter::process(float** output, float** input, unsigned i
 		return;
 	}
 	try {
-		brFrameCount = frameCount;
+		this->frameCount = frameCount;
 		double* data = (double*)UDPReceiver::globalReceiver->unionBuff.data;
 		Position postion(data);
 		calculateDirection(postion, inputChannels);
 		vector<CopyJobInfo> jobs = createJob(inputChannels);
-		for (int lay = 0; lay != 5; ++lay) {
-			for (int br = 0; br != layPosCount[lay]; ++br) {
-				brirNeedConv[lay][br] = false;
-			}
-		}
 		copyInputData(jobs, input, frameCount);
 		int convJobCount = 0;
 		for (int lay = 0; lay != 5; ++lay) {
-			for (int br = 0; br != layPosCount[lay]; ++br) {
-				if (brirNeedConv[lay][br]) {
+			for (int br = 0; br != layPosCount; ++br) {
+				if (brirNeedConv[lay][br] != 0) {
+					--brirNeedConv[lay][br];
 					convJobs[convJobCount].layer = lay;
 					convJobs[convJobCount].pos = br;
 					++convJobCount;

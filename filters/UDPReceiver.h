@@ -6,30 +6,29 @@
 
 #pragma comment(lib,"WS2_32.lib")
 
-enum UDPDataType {
-	number,
-	character
-};
-
-class UDPReceiver{
+class UDPReceiver {
 public:
 	volatile union {
 		double data[32];
 		char byte[256];
-	}unionBuff; 
-	
-	int getDirection(UDPDataType dataType);
-	void doGetHotKey();
+	}unionBuff;
+
+	int getDirection();
+	bool start();
 
 	static bool initUdpReceiver(int port);
 	static UDPReceiver* globalReceiver;
+	~UDPReceiver() {
+		CloseUDP();
+	}
 
 private:
+	UDPReceiver(int p);
 	volatile boolean open = true;
-	
-	double centerYaw = 1000;
-	MSG hotKeyMsg = { 0 };
 
+	int getYaw();
+	int centerYaw = 0;
+	int portOffset;
 	int port = 2055;
 	int senderAddrSize;
 	WSADATA wsData;
@@ -37,15 +36,12 @@ private:
 	sockaddr_in recvAddr;
 	sockaddr_in senderAddr;
 	int bufLen = 256;
-	UDPReceiver(int p);
 	void doReceive();
 	void CloseUDP();
-	
+
 	static DWORD WINAPI UdpReceive(LPVOID p);
 
-	~UDPReceiver(){
-		CloseUDP();
-	}
+
 };
 
 

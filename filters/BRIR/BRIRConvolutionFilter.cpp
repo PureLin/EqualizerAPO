@@ -49,7 +49,6 @@ void BRIRConvolutionFilter::initialize()
 	channelCount = 2;
 
 	SF_INFO info;
-
 	SNDFILE* inFile = sf_wchar_open(filename.c_str(), SFM_READ, &info);
 	if (inFile == NULL)
 	{
@@ -63,13 +62,13 @@ void BRIRConvolutionFilter::initialize()
 	{
 		TraceF(L"Convolving using impulse response file %s", filename.c_str());
 		unsigned fileChannelCount = info.channels;
-		unsigned frameCount = (unsigned)info.frames;
+		fileFrameCount = (unsigned)info.frames;
 
-		float* interleavedBuf = new float[frameCount * fileChannelCount];
+		float* interleavedBuf = new float[fileFrameCount * fileChannelCount];
 
 		sf_count_t numRead = 0;
-		while (numRead < frameCount)
-			numRead += sf_readf_float(inFile, interleavedBuf + numRead * fileChannelCount, frameCount - numRead);
+		while (numRead < fileFrameCount)
+			numRead += sf_readf_float(inFile, interleavedBuf + numRead * fileChannelCount, fileFrameCount - numRead);
 
 		sf_close(inFile);
 		inFile = NULL;
@@ -77,9 +76,9 @@ void BRIRConvolutionFilter::initialize()
 		float** bufs = new float*[fileChannelCount];
 		for (unsigned i = 0; i < fileChannelCount; i++)
 		{
-			float* buf = new float[frameCount];
+			float* buf = new float[fileFrameCount];
 			float* p = interleavedBuf + i;
-			for (unsigned j = 0; j < frameCount; j++)
+			for (unsigned j = 0; j < fileFrameCount; j++)
 			{
 				buf[j] = p[j * fileChannelCount];
 			}
@@ -91,7 +90,7 @@ void BRIRConvolutionFilter::initialize()
 		filters = (HConvSingle*)MemoryHelper::alloc(sizeof(HConvSingle) * channelCount);
 		for (unsigned i = 0; i < channelCount; i++)
 		{
-			hcInitSingle(&filters[i], bufs[i % fileChannelCount], frameCount, maxFrameCount, 1);
+			hcInitSingle(&filters[i], bufs[i % fileChannelCount], fileFrameCount, maxInputFrameCount, 1);
 		}
 
 		for (unsigned i = 0; i < fileChannelCount; i++)
@@ -101,7 +100,6 @@ void BRIRConvolutionFilter::initialize()
 		delete bufs;
 		delete interleavedBuf;
 	}
-
 }
 
 #pragma AVRT_CODE_BEGIN

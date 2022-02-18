@@ -4,6 +4,7 @@
 #include "UDPReceiver.h"
 #include "IFilter.h"
 #include "ConvolutionFilter.h"
+#include "BRIR/BRIRConvolutionFilter.h"
 
 static struct CopyJobInfo {
 	int layer;
@@ -33,18 +34,20 @@ public:
 	
 
 	static void processOneChannelBrir(ConvJobInfo* job);
+	static std::allocator<BRIRConvolutionFilter> convAllocator;
 
 	void initMlBuff();
 	void copyInputData(std::vector<CopyJobInfo>& jobs, float** input, unsigned int frameCount);
-	static ConvolutionFilter* convFilters[5][12];
+	static BRIRConvolutionFilter* convFilters[5][12];
 	static unsigned int bufsize;
-	static unsigned int brFrameCount;
+	static unsigned int maxBrFrameCount;
+	static unsigned int frameCount;
 	int inputChannels;
 
 	//5 layer->max 12 brir->2 ear for each brir
 	static float* mlInBuffer[5][12][2];
 	//indicate this brir need conv
-	static boolean brirNeedConv[5][12];
+	static int brirNeedConv[5][12];
 
 	static ConvJobInfo convJobs[32];
 	static PTP_WORK works[32];

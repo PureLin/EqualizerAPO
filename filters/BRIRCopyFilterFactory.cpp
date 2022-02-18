@@ -44,11 +44,7 @@ vector<IFilter*> BRIRCopyFilterFactory::createFilter(const wstring& configPath, 
 		}
 		else {
 			wstring name = converter.from_bytes(json["name"].asString());
-			int receiveType = 0;
 			int port = 2055;
-			if (json["receiveType"].isInt()) {
-				receiveType = json["receiveType"].asInt();
-			}
 			if (json["port"].isInt()) {
 				port = json["port"].asInt();
 			}
@@ -59,8 +55,8 @@ vector<IFilter*> BRIRCopyFilterFactory::createFilter(const wstring& configPath, 
 				}
 				channelToHeadDegree[ch] = json["directions"][ch].asInt();
 			}
-			LogF(L"create BRIR filter %d %ls %f %d", port, name, bassPercent, receiveType);
-			filter = new(mem)BRIRFilter(port, name, absolutePath, channelToHeadDegree, bassPercent, receiveType);
+			LogF(L"create BRIR filter %d %ls %f", port, name, bassPercent);
+			filter = new(mem)BRIRFilter(port, name, absolutePath, channelToHeadDegree, bassPercent);
 		}
 	}
 	if (command == L"BRIRMulti")
