@@ -40,7 +40,7 @@ public:
 
 
 	void initMlBuff();
-	void copyInputData(std::vector<CopyJobInfo>& jobs, float** input, unsigned int frameCount);
+	void copyInputData(float** input, unsigned int frameCount);
 	static BRIRConvolutionFilter* convFilters[5][12];
 	static unsigned int bufsize;
 	static unsigned int maxBrFrameCount;
@@ -53,12 +53,14 @@ public:
 	//indicate this brir need conv
 	static int brirNeedConv[5][12];
 
+	static int lastDistance[5][12][8][2];
+	static int currentDistance[5][12][8][2];
+
 	static ConvJobInfo convJobs[60];
 	static PTP_WORK works[60];
 	static PTP_WORK loPassWork;
 
 	static bool init;
 	static std::vector <std::wstring> convChannel;
-	static PTP_POOL pool;
 };
 #pragma AVRT_VTABLES_END
