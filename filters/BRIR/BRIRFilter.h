@@ -9,7 +9,6 @@
 #include <cstdio>
 #include <map>
 #include "../BiQuadFilter.h"
-#include "BRIRHighPassFilter.h"
 #include "BRIRLowPassFilter.h"
 
 #pragma AVRT_VTABLES_BEGIN

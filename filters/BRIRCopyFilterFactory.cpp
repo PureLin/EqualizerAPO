@@ -73,7 +73,7 @@ vector<IFilter*> BRIRCopyFilterFactory::createFilter(const wstring& configPath, 
 		PathRemoveFileSpecW(filePath);
 		wstring absolutePath = filePath;
 		absolutePath.append(L"\\brir\\");
-		filter = new(mem)BRIRMultiLayerCopyFilter(2055, absolutePath);
+		filter = new(mem)BRIRMultiLayerCopyFilter(3053, absolutePath);
 	}
 	if (filter == NULL)
 		return vector<IFilter*>(0);

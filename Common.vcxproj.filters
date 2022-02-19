@@ -201,9 +201,6 @@
     <ClInclude Include="filters\BRIR\lib_json\writer.h">
       <Filter>brir\json</Filter>
     </ClInclude>
-    <ClInclude Include="filters\BRIR\BRIRHighPassFilter.h">
-      <Filter>brir</Filter>
-    </ClInclude>
     <ClInclude Include="filters\BRIR\BRIRLowPassFilter.h">
       <Filter>brir</Filter>
     </ClInclude>
@@ -365,9 +362,6 @@
     </ClCompile>
     <ClCompile Include="filters\BRIR\lib_json\json_writer.cpp">
       <Filter>brir\json</Filter>
-    </ClCompile>
-    <ClCompile Include="filters\BRIR\BRIRHighPassFilter.cpp">
-      <Filter>brir</Filter>
     </ClCompile>
     <ClCompile Include="filters\BRIR\BRIRLowPassFilter.cpp">
       <Filter>brir</Filter>

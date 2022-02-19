@@ -155,7 +155,6 @@
     <ClInclude Include="filters\BRIRMultiLayerCopyFilter.h" />
     <ClInclude Include="filters\BRIR\BRIRConvolutionFilter.h" />
     <ClInclude Include="filters\BRIR\BRIRFilter.h" />
-    <ClInclude Include="filters\BRIR\BRIRHighPassFilter.h" />
     <ClInclude Include="filters\BRIR\BRIRLowPassFilter.h" />
     <ClInclude Include="filters\BRIR\lib_json\allocator.h" />
     <ClInclude Include="filters\BRIR\lib_json\assertions.h" />
@@ -230,7 +229,6 @@
     <ClCompile Include="filters\BRIRMultiLayerCopyFilter.cpp" />
     <ClCompile Include="filters\BRIR\BRIRConvolutionFilter.cpp" />
     <ClCompile Include="filters\BRIR\BRIRFilter.cpp" />
-    <ClCompile Include="filters\BRIR\BRIRHighPassFilter.cpp" />
     <ClCompile Include="filters\BRIR\BRIRLowPassFilter.cpp" />
     <ClCompile Include="filters\BRIR\lib_json\json_reader.cpp" />
     <ClCompile Include="filters\BRIR\lib_json\json_value.cpp" />

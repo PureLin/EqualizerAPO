@@ -5,6 +5,7 @@
 #include "IFilter.h"
 #include "ConvolutionFilter.h"
 #include "BRIR/BRIRConvolutionFilter.h"
+#include "BRIR/BRIRLowPassFilter.h"
 
 static struct CopyJobInfo {
 	int layer;
@@ -35,6 +36,8 @@ public:
 
 	static void processOneChannelBrir(ConvJobInfo* job);
 	static std::allocator<BRIRConvolutionFilter> convAllocator;
+	BRIRLowPassFilter* loPassFilter;
+
 
 	void initMlBuff();
 	void copyInputData(std::vector<CopyJobInfo>& jobs, float** input, unsigned int frameCount);
@@ -44,13 +47,15 @@ public:
 	static unsigned int frameCount;
 	int inputChannels;
 
+	static float** currentOutput;
 	//5 layer->max 12 brir->2 ear for each brir
 	static float* mlInBuffer[5][12][2];
 	//indicate this brir need conv
 	static int brirNeedConv[5][12];
 
-	static ConvJobInfo convJobs[32];
-	static PTP_WORK works[32];
+	static ConvJobInfo convJobs[60];
+	static PTP_WORK works[60];
+	static PTP_WORK loPassWork;
 
 	static bool init;
 	static std::vector <std::wstring> convChannel;
