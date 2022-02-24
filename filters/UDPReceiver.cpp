@@ -35,7 +35,7 @@ vector<string> split(const char* input) {
 }
 
 int UDPReceiver::getDirection() {
-	int yaw = getYaw() - centerYaw;
+	int yaw = getYaw();
 	if (yaw < -180) {
 		yaw += 360;
 	}
@@ -77,11 +77,6 @@ bool UDPReceiver::initUdpReceiver(int port) {
 			return false;
 		}
 	}
-	else {
-		int yaw = globalReceiver->getYaw();
-		LogFStatic(L"reset center yaw to %d", yaw);
-		globalReceiver->centerYaw = yaw;
-	}
 	return true;
 }
 
@@ -116,7 +111,6 @@ UDPReceiver::UDPReceiver(int p) {
 	if (p != 0) {
 		port = p;
 	}
-	centerYaw = 0;
 	portOffset = getPortOffset();
 	std::fill(unionBuff.data, unionBuff.data + 25, 0);
 	senderAddrSize = sizeof(recvAddr);

@@ -73,7 +73,23 @@ vector<IFilter*> BRIRCopyFilterFactory::createFilter(const wstring& configPath, 
 		PathRemoveFileSpecW(filePath);
 		wstring absolutePath = filePath;
 		absolutePath.append(L"\\brir\\");
-		filter = new(mem)BRIRMultiLayerCopyFilter(3053, absolutePath);
+
+		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+		string jsonStr = converter.to_bytes(parameters); 
+		string err;
+		Json::Value json;
+		if (!parse(&jsonStr, &json, &err)) {
+			LogF(L"Failed to parse json input %s, erro: %s", jsonStr, err);
+		}
+		else {
+			int port = 3053;
+			float bassPercent = json["bassVolume"].asFloat();
+			if (json["port"].isInt()) {
+				port = json["port"].asInt();
+			}
+			LogF(L"create Multi BRIR filter %d %f", port,  bassPercent);
+			filter = new(mem)BRIRMultiLayerCopyFilter(port, bassPercent, absolutePath);
+		}
 	}
 	if (filter == NULL)
 		return vector<IFilter*>(0);

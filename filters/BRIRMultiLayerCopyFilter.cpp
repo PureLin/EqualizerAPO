@@ -16,7 +16,6 @@ namespace BRIRMULTI {
 	static const int layHorzionDegree = 30;
 	static const int layVerticalDegree = 30;
 	static float bassVolume = 0.4;
-	static PTP_WORK copyWorks[8];
 
 
 
@@ -26,7 +25,7 @@ namespace BRIRMULTI {
 
 	static float volumePrecent;
 	static bool inputHasData[8];
-	static int lfeChannel = 4;
+	static int lfeChannel = 3;
 	VOID
 		CALLBACK
 		ConvWorkCallBack(
@@ -138,10 +137,11 @@ void inline calculateVolume(double toLeftLowPercent, double* volume) {
 	volume[1] = sin(degree);
 }
 
-BRIRMultiLayerCopyFilter::BRIRMultiLayerCopyFilter(int port, wstring path) {
+BRIRMultiLayerCopyFilter::BRIRMultiLayerCopyFilter(int port, float bassV, wstring path) {
 	if (!init) {
 		try {
 			LogF(L"Use UDP port %d", port);
+			bassVolume = bassV;
 			bool result = UDPReceiver::initUdpReceiver(port);
 			LogF(L"Create UDPReceiver Finished");
 			for (int lay = 0; lay != 5; ++lay) {

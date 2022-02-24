@@ -24,7 +24,7 @@ static struct ConvJobInfo {
 class BRIRMultiLayerCopyFilter : public IFilter
 {
 public:
-	BRIRMultiLayerCopyFilter(int port, std::wstring path);
+	BRIRMultiLayerCopyFilter(int port, float bassVolume, std::wstring path);
 	virtual ~BRIRMultiLayerCopyFilter();
 
 

@@ -135,7 +135,7 @@ void hcPutSingle(HConvSingle *filter, float *x)
 
 void hcProcessSingle(HConvSingle *filter)
 {
-#if 0
+#if 1
 	int s, n, start, stop, flen;
 	float *x_real;
 	float *x_imag;

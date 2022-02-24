@@ -27,7 +27,6 @@ private:
 	volatile boolean open = true;
 
 	int getYaw();
-	int centerYaw = 0;
 	int portOffset;
 	int port = 2055;
 	int senderAddrSize;

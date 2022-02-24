@@ -114,6 +114,7 @@ void inline BRIRFilter::calculateChannelToBrirDistance(int direction) {
 		currentDistance[ch][secondBrir] = degreePerBrir - sourceMappingDirection % degreePerBrir;
 	}
 }
+
 void inline BRIRFilter::resetBuff(unsigned int frameCount) {
 	for (int br = 0; br != brirSize; ++br) {
 		for (int er = 0; er != 2; ++er) {
@@ -129,9 +130,6 @@ void inline BRIRFilter::copyInputData() {
 			continue;
 		}
 		float* oneChannelInput = currentInput[ch];
-		if (!oneChannelInput) {
-			continue;
-		}
 		for (int br = 0; br != brirSize; ++br) {
 			float startDistance = lastDistance[ch][br];
 			float endDistance = currentDistance[ch][br];
@@ -154,27 +152,6 @@ void inline BRIRFilter::copyInputData() {
 					convBuffer[br][0][f] += oneChannelInput[f] * v * volumePrecent;
 					convBuffer[br][1][f] += oneChannelInput[f] * v * volumePrecent;
 				}
-				/*
-				unsigned f = 0;
-				float diff = startDistance > endDistance ? -1 * moveSpeed : moveSpeed;
-				startDistance += diff;
-				for (; abs(startDistance - endDistance) > moveSpeed && f != frameCount; ++f, startDistance += diff) {
-					float v = volume(startDistance / degreePerBrir);
-					convBuffer[br][0][f] += oneChannelInput[f] * v * volumePrecent;
-					convBuffer[br][1][f] += oneChannelInput[f] * v * volumePrecent;
-				}
-				if (f != frameCount) {
-					float v = volume(endDistance / degreePerBrir);
-					for (; f != frameCount; ++f) {
-						convBuffer[br][0][f] += oneChannelInput[f] * v * volumePrecent;
-						convBuffer[br][1][f] += oneChannelInput[f] * v * volumePrecent;
-					}
-				}
-				else {
-					LogF(L"move speed to fast to follow %f to %f", lastDistance[ch][br], endDistance);
-					currentDistance[ch][br] = startDistance;
-				}
-				*/
 			}
 			brirNeedConv[br] = maxBrFrameCount / frameCount + 1;
 		}
@@ -182,10 +159,11 @@ void inline BRIRFilter::copyInputData() {
 }
 
 void BRIRFilter::doLoPass() {
-	loPassFilter->process(loPassBuffer, frameCount);
+	loPassFilter->process(currentOutput[0], frameCount);
 	for (int f = 0; f != frameCount; ++f) {
-		loPassBuffer[f] *= bassPercent;
+		currentOutput[0][f] *= bassPercent;
 	}
+	copy(currentOutput[0], currentOutput[0] + frameCount, currentOutput[1]);
 }
 
 void BRIRFilter::doConv(int index) {
@@ -212,19 +190,15 @@ void BRIRFilter::create() {
 BRIRFilter::BRIRFilter(int port, wstring name, wstring path, int degree[8], float bassPercent) {
 	this->udpPort = port;
 	this->name = name;
-	if (name.size() != 0) {
-		path.append(name);
-	}
-	else {
+	if (name.size() == 0) {
 		name = L"BRIR";
 	}
+	path.append(name);
 	this->brirPath = path;
 	for (int i = 0; i != 8; ++i) {
 		channelToHeadDegree[i] = degree[i];
 	}
 	this->bassPercent = bassPercent;
-	SYSTEM_INFO sysInfo;
-	GetSystemInfo(&sysInfo);
 	create();
 }
 
@@ -245,7 +219,6 @@ BRIRFilter::~BRIRFilter() {
 		}
 		delete[] lastDistance;
 		delete[] currentDistance;
-		delete[] loPassBuffer;
 
 		delete[] brirNeedConv;
 		delete[] inputHasData;
@@ -265,7 +238,6 @@ void BRIRFilter::createBuff() {
 		}
 	}
 
-	loPassBuffer = new float[frameCount];
 
 	lastDistance = new int* [inputChannelCount];
 	currentDistance = new int* [inputChannelCount];
@@ -362,10 +334,11 @@ void BRIRFilter::process(float** output, float** input, unsigned int frameCount)
 	try {
 		this->frameCount = frameCount;
 		this->currentInput = input;
-		fill(loPassBuffer, loPassBuffer + frameCount, 0.0);
+		this->currentOutput = output;
+		fill(currentOutput[0], currentOutput[0] + frameCount, 0);
 		for (int ch = 0; ch != inputChannelCount; ++ch) {
 			for (int f = 0; f != frameCount; ++f) {
-				loPassBuffer[f] += input[ch][f];
+				currentOutput[0][f] += input[ch][f];
 				if (input[ch][f]) {
 					inputHasData[ch] = true;
 				}
@@ -386,9 +359,7 @@ void BRIRFilter::process(float** output, float** input, unsigned int frameCount)
 				++jobIndex;
 			}
 		}
-		for (int ear = 0; ear != 2; ++ear) {
-			fill(output[ear], output[ear] + frameCount, 0);
-		}
+		WaitForThreadpoolWorkCallbacks(loPass, false);
 		for (int jb = 0; jb != jobIndex; ++jb) {
 			WaitForThreadpoolWorkCallbacks(works[jb], false);
 			int br = convWorks[jb].convIndex;
@@ -398,12 +369,6 @@ void BRIRFilter::process(float** output, float** input, unsigned int frameCount)
 				}
 			}
 			CloseThreadpoolWork(works[jb]);
-		}
-		WaitForThreadpoolWorkCallbacks(loPass, false);
-		for (int ear = 0; ear != 2; ++ear) {
-			for (unsigned f = 0; f < frameCount; f++) {
-				output[ear][f] += loPassBuffer[f];
-			}
 		}
 	}
 	catch (exception e) {
