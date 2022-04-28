@@ -34,12 +34,14 @@ void transferDirection(Vector3& v, SoundDirection& direction) {
 	if (v.z < 0) {
 		direction.vertical *= -1;
 	}
+	direction.volume = 0.3 * (1 / length - 1) + 1;
 }
 
 void calculateDirection(Position& position, int inputChannel)
 {
+	Vector3 s(position.x, position.y, position.z);
 	Quaternion q(position.yaw, position.pitch, position.roll);
 	for (int ch = 0; ch != inputChannel; ++ch) {
-		transferDirection(q.Rotate(sourceDirection[ch]), actualDirection[ch]);
+		transferDirection(q.Rotate(sourceDirection[ch] - s), actualDirection[ch]);
 	}
 }

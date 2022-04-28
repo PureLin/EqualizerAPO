@@ -2,15 +2,14 @@
 #include "BRIRLowPassFilter.h"
 
 #pragma AVRT_CODE_BEGIN
-BRIRLowPassFilter::BRIRLowPassFilter(int sampleRate, int maxFrameCount)
+BRIRLowPassFilter::BRIRLowPassFilter(float freq[3], int sampleRate, int maxFrameCount)
 {
 	this->frameCount = frameCount;
 	biquads= (BiQuad*)MemoryHelper::alloc(3 * sizeof(BiQuad));
 	float q = 0.70710678118654757;
-	float loPass = 150;
 	for (int bq = 0; bq < 3; ++bq)
 	{
-		new(biquads + bq)BiQuad(BiQuad::LOW_PASS, 0, loPass, sampleRate, q, false);
+		new(biquads + bq)BiQuad(BiQuad::LOW_PASS, 0, freq[bq], sampleRate, q, false);
 	}
 }
 

@@ -187,7 +187,7 @@ void BRIRFilter::create() {
 	}
 }
 
-BRIRFilter::BRIRFilter(int port, wstring name, wstring path, int degree[8], float bassPercent) {
+BRIRFilter::BRIRFilter(int port, wstring name, wstring path, int degree[8], float bassPercent, float loPassFreq[3]) {
 	this->udpPort = port;
 	this->name = name;
 	if (name.size() == 0) {
@@ -197,6 +197,9 @@ BRIRFilter::BRIRFilter(int port, wstring name, wstring path, int degree[8], floa
 	this->brirPath = path;
 	for (int i = 0; i != 8; ++i) {
 		channelToHeadDegree[i] = degree[i];
+	}
+	for (int l = 0; l != 3; ++l) {
+		this->loPassFreq[l] = loPassFreq[l];
 	}
 	this->bassPercent = bassPercent;
 	create();
@@ -251,7 +254,7 @@ void BRIRFilter::createBuff() {
 
 void BRIRFilter::initLoHiFilter() {
 	int sampleRate = sampleRates[currentSampleRateIndex];
-	loPassFilter = new BRIRLowPassFilter(sampleRate, frameCount);
+	loPassFilter = new BRIRLowPassFilter(loPassFreq, sampleRate, frameCount);
 }
 
 void BRIRFilter::init() {

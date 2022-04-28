@@ -26,7 +26,7 @@
 class BRIRLowPassFilter
 {
 public:
-	BRIRLowPassFilter(int sampleRate, int maxFrameCount);
+	BRIRLowPassFilter(float freq[3], int sampleRate, int maxFrameCount);
 	virtual~BRIRLowPassFilter();
 	void process(float* buffer, int frameCount);
 

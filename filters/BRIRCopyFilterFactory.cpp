@@ -56,7 +56,14 @@ vector<IFilter*> BRIRCopyFilterFactory::createFilter(const wstring& configPath, 
 				channelToHeadDegree[ch] = json["directions"][ch].asInt();
 			}
 			LogF(L"create BRIR filter %d %ls %f", port, name, bassPercent);
-			filter = new(mem)BRIRFilter(port, name, absolutePath, channelToHeadDegree, bassPercent);
+			float loPassFreq[3]{ 200,250,250 };
+			for (int l = 0; l != 3; ++l) {
+				if (!json["loPassFreq"][l].isDouble()) {
+					break;
+				}
+				loPassFreq[l] = json["loPassFreq"][l].asDouble();
+			}
+			filter = new(mem)BRIRFilter(port, name, absolutePath, channelToHeadDegree, bassPercent, loPassFreq);
 		}
 	}
 	if (command == L"BRIRMulti")
@@ -75,7 +82,7 @@ vector<IFilter*> BRIRCopyFilterFactory::createFilter(const wstring& configPath, 
 		absolutePath.append(L"\\brir\\");
 
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-		string jsonStr = converter.to_bytes(parameters); 
+		string jsonStr = converter.to_bytes(parameters);
 		string err;
 		Json::Value json;
 		if (!parse(&jsonStr, &json, &err)) {
@@ -87,8 +94,15 @@ vector<IFilter*> BRIRCopyFilterFactory::createFilter(const wstring& configPath, 
 			if (json["port"].isInt()) {
 				port = json["port"].asInt();
 			}
-			LogF(L"create Multi BRIR filter %d %f", port,  bassPercent);
-			filter = new(mem)BRIRMultiLayerCopyFilter(port, bassPercent, absolutePath);
+			LogF(L"create Multi BRIR filter %d %f", port, bassPercent);
+			float loPassFreq[3]{ 200,250,250 };
+			for (int l = 0; l != 3; ++l) {
+				if (!json["loPassFreq"][l].isDouble()) {
+					break;
+				}
+				loPassFreq[l] = json["loPassFreq"][l].asDouble();
+			}
+			filter = new(mem)BRIRMultiLayerCopyFilter(port, bassPercent, absolutePath, loPassFreq);
 		}
 	}
 	if (filter == NULL)

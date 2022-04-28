@@ -17,6 +17,7 @@ static struct CopyJobInfo {
 	}
 };
 static struct ConvJobInfo {
+	void* filter;
 	int layer;
 	int pos;
 };
@@ -24,7 +25,7 @@ static struct ConvJobInfo {
 class BRIRMultiLayerCopyFilter : public IFilter
 {
 public:
-	BRIRMultiLayerCopyFilter(int port, float bassVolume, std::wstring path);
+	BRIRMultiLayerCopyFilter(int port, float bassVolume, std::wstring path, float loPassFreq[3]);
 	virtual ~BRIRMultiLayerCopyFilter();
 
 
@@ -34,33 +35,32 @@ public:
 	void process(float** output, float** input, unsigned frameCount) override;
 	
 
-	static void processOneChannelBrir(ConvJobInfo* job);
-	static std::allocator<BRIRConvolutionFilter> convAllocator;
+	void processOneChannelBrir(ConvJobInfo* job);
+	std::allocator<BRIRConvolutionFilter> convAllocator;
 	BRIRLowPassFilter* loPassFilter;
-
+	float loPassFreq[3];
 
 	void initMlBuff();
 	void copyInputData(float** input, unsigned int frameCount);
-	static BRIRConvolutionFilter* convFilters[5][12];
-	static unsigned int bufsize;
-	static unsigned int maxBrFrameCount;
-	static unsigned int frameCount;
+	BRIRConvolutionFilter* convFilters[5][12];
+	unsigned int bufsize = 10240;
+	unsigned int maxBrFrameCount = 0;
+	unsigned int frameCount = 0;
 	int inputChannels;
 
-	static float** currentOutput;
+	float** currentOutput;
 	//5 layer->max 12 brir->2 ear for each brir
-	static float* mlInBuffer[5][12][2];
+	float* mlInBuffer[5][12][2];
 	//indicate this brir need conv
-	static int brirNeedConv[5][12];
+	int brirNeedConv[5][12];
 
-	static int lastDistance[5][12][8][2];
-	static int currentDistance[5][12][8][2];
+	int lastDistance[5][12][8][2];
+	int currentDistance[5][12][8][2];
 
-	static ConvJobInfo convJobs[60];
-	static PTP_WORK works[60];
-	static PTP_WORK loPassWork;
+	ConvJobInfo convJobs[60];
+	PTP_WORK works[60];
+	PTP_WORK loPassWork;
 
-	static bool init;
-	static std::vector <std::wstring> convChannel;
+	std::vector <std::wstring> convChannel;
 };
 #pragma AVRT_VTABLES_END

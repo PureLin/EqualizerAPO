@@ -15,7 +15,7 @@
 class BRIRFilter : public IFilter
 {
 public:
-	BRIRFilter(int port, std::wstring name, std::wstring path, int channelToHeadDegree[8],float bassPercent);
+	BRIRFilter(int port, std::wstring name, std::wstring path, int channelToHeadDegree[8],float bassPercent,float loPassFreq[3]);
 	virtual ~BRIRFilter();
 
 	bool getAllChannels() override { return false; }
@@ -41,7 +41,7 @@ private:
 
 	int currentSampleRateIndex = -1;
 	int sampleRates[4]{ 44100,48000,88200,96000 };
-	
+
 	int inputChannelCount = 2;
 	bool hasLFEChannel = false;
 	int lfeChannel = -1;
@@ -63,6 +63,7 @@ private:
 	unsigned int maxBrFrameCount = 0;
 	unsigned int frameCount = 0;
 
+	float loPassFreq[3];
 	BRIRLowPassFilter* loPassFilter;
 	float** currentOutput;
 	float** currentInput;

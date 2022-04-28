@@ -52,7 +52,7 @@ int UDPReceiver::getDirection() {
 
 int UDPReceiver::getYaw() {
 	double* data = (double*)unionBuff.data;
-	return data[3];
+	return data[3] * -1;
 }
 
 DWORD WINAPI UDPReceiver::UdpReceive(LPVOID p)
